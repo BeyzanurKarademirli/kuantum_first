@@ -82,6 +82,23 @@ export const ORACLES = {
     }),
     score: (s, v) => marginalProb(s, [0, 1], bitsOf(v.message, 2)),
   },
+  // Faz kestirimi: q2 özdurumu |1⟩ olan U = P(2πφ); kutu kontrollü U (q1) ve U² (q0) içerir
+  qpe: {
+    label: 'U^k',
+    variants: [0, 1, 2, 3].map((m) => {
+      const phi = m / 4;
+      return {
+        name: `φ = ${m}/4`,
+        goal: `q0q1 = ${bitStr(m, 2)}`,
+        ops: [
+          { g: 'CP', q: 1, q2: 2, theta: 2 * Math.PI * phi },
+          { g: 'CP', q: 0, q2: 2, theta: 4 * Math.PI * phi },
+        ],
+        phase: m,
+      };
+    }),
+    score: (s, v) => marginalProb(s, [0, 1], bitsOf(v.phase, 2)),
+  },
   // Işınlanma: q0 bilinmeyen bir durumda hazırlanır; q2'de aynısı belirmeli
   teleport: {
     label: 'ψ',

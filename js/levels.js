@@ -171,6 +171,20 @@ const RAW = [
     n: 3, gates: ['H', 'CNOT', 'CZ'], oracle: { kind: 'teleport', col: 0 }, par: 6,
     allowedPairs: { CNOT: [[0, 1], [1, 2]] },
   },
+  {
+    id: 'fourier-saati',
+    title: 'Fourier Saati',
+    story: 'Kuantum Fourier dönüşümü (QFT) bir sayıyı fazlara yazar. Hedef QFT|001⟩: sekiz genliğin her biri bir öncekinden 45° ileride, bir saat gibi. Renk tekerleğinin tam bir tur döndüğünü göreceksin. Sır: bu durum aslında hiç dolanık değil; her kübit kendi hızında dönen ayrı bir ibre.',
+    hint: 'q0 yarım tur (180°), q1 çeyrek tur (90°), q2 sekizde bir tur (45°) dönmeli. Her biri için önce H.',
+    n: 3, gates: ['H', 'X', 'S', 'T', 'CP'], target: Array.from({ length: 8 }, (_, y) => [Math.cos(Math.PI * y / 4), Math.sin(Math.PI * y / 4)]), par: 6,
+  },
+  {
+    id: 'faz-kestirimi',
+    title: 'Faz Kestirimi',
+    story: 'Shor algoritmasının kalbi. U^k kutusu, q2 üzerindeki U = P(2πφ) kapısını q1 kontrollü bir kez, q0 kontrollü iki kez uyguluyor. q2 = |1⟩ ise U onu değiştirmez, yalnızca e^{2πiφ} fazı ekler; bu faz kontrol kübitlerine "geri teper". Görevin φ\'yi iki bitlik bir sayı olarak okumak: sonunda q0q1 = 4φ olmalı.',
+    hint: 'Önce q2\'yi |1⟩ yap ve sayaç kübitlerini süperpozisyona sok. Kutudan sonra ters QFT: SWAP, H q1, CP(−π/2), H q0.',
+    n: 3, gates: ['H', 'X', 'CP', 'SWAP'], oracle: { kind: 'qpe', col: 2 }, par: 7,
+  },
 ];
 
 const CHAPTERS = [
@@ -178,6 +192,7 @@ const CHAPTERS = [
   ['Dolanıklık', ['bell', 'hadamard-yagmuru', 'kardes-bitler', 'hayali-bell', 'gizli-faz', 'singlet', 'ghz', 'takasci', 'faz-labirenti']],
   ['Döndürmeler', ['ceyrek-sans', 'altida-bir', 'yarim-dolanik']],
   ['Algoritmalar', ['deutsch', 'bernstein-vazirani', 'grover', 'super-yogun', 'isinlanma']],
+  ['Fourier', ['fourier-saati', 'faz-kestirimi']],
 ];
 
 const byId = Object.fromEntries(RAW.map((l) => [l.id, l]));

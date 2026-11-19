@@ -42,6 +42,12 @@ export const SOLUTIONS = {
     ['H', 1, null, 1], ['CNOT', 1, 2, 2], ['CNOT', 0, 1, 3], ['H', 0, null, 4],
     ['CNOT', 1, 2, 5], ['CZ', 0, 2, 6],
   ],
+  'fourier-saati': [['X', 0], ['H', 0], ['H', 1], ['S', 1], ['H', 2], ['T', 2]],
+  // U^k kutusu: sütun 2
+  'faz-kestirimi': [
+    ['X', 2, null, 0], ['H', 0, null, 0], ['H', 1, null, 0],
+    ['SWAP', 0, 1, 3], ['H', 1, null, 4], ['CP', 0, 1, 5, -Math.PI / 2], ['H', 0, null, 6],
+  ],
 };
 
 export function solutionOps(id) {

@@ -43,6 +43,7 @@
             <label class="toggle"><input type="checkbox" id="autoSound"> sesli mod</label>
             <button id="qasm" title="OpenQASM olarak dışa/içe aktar">⟨/⟩ QASM</button>
             <button id="share" class="sandbox-only">🔗 Paylaş</button>
+            <button id="challenge" class="sandbox-only" title="Bu durumu arkadaşına bulmaca olarak gönder">🎯 Meydan oku</button>
           </div>
         </div>
       </div>
@@ -65,6 +66,7 @@
         <h2>Durum <small id="stateText" class="mono"></small></h2>
         <canvas id="amps" class="amps"></canvas>
         <div class="legend"><span class="wheel" aria-hidden="true"></span> çember boyu = genlik, renk ve ibre = faz</div>
+        <p id="noiseInfo" class="noise-info" hidden></p>
       </div>
       <div class="card" id="targetCard">
         <h2>Hedef <span id="fid" class="fid"></span></h2>

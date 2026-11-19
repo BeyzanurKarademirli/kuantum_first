@@ -7,7 +7,7 @@ Tarayıcıda çalışan, bağımlılıksız bir kuantum devre bulmaca oyunu. Ara
   Python/Qiskit yalnızca CI doğrulamasında kullanılır.
 - **Bit sırası:** kübit 0, ket yazımında en soldaki bittir (`|q0 q1 …⟩`). Qiskit tersini kullanır;
   `tests/qiskit/verify.py` bunu `reverse_qargs()` ile düzeltir.
-- `js/quantum.js`, `js/game.js`, `js/qasm.js`, `js/levels.js` DOM'a dokunmaz (Node'da test edilir).
+- `js/quantum.js`, `js/noise.js`, `js/game.js`, `js/qasm.js`, `js/levels.js` DOM'a dokunmaz (Node'da test edilir).
   DOM kodu yalnızca `js/app.js`, `js/viz.js` ve `js/audio.js` içindedir.
 - Her yeni bölüm için `tests/solutions.mjs` içine ideal kapı sayısında (`par`) bir çözüm ekle.
   Testler, her bölümün 3 yıldızla çözülebildiğini doğrular.

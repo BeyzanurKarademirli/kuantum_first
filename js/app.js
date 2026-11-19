@@ -1,6 +1,6 @@
 import {
   GATES, ANGLES, angleLabel, runCircuit, zeroState, cloneState, stateFromAmplitudes, blochVector,
-  entanglementEntropy, measureShots, sample, formatState, ketLabel,
+  entanglementEntropy, entropyFromBloch, measureShots, sample, formatState, ketLabel,
 } from './quantum.js';
 import { LEVELS } from './levels.js';
 import { drawAmplitudes, drawBloch, lerpState } from './viz.js';
@@ -9,6 +9,9 @@ import {
   evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor, placementAllowed,
 } from './game.js';
 import { toQasm, fromQasm } from './qasm.js';
+import {
+  CHANNELS, runNoisy, rhoBloch, rhoProbabilities, purity, rhoFidelity, sampleRho, measureShotsRho,
+} from './noise.js';
 
 const LEVEL_COLS = 8, LAB_COLS = 12;
 let COLS = LEVEL_COLS;
@@ -36,9 +39,13 @@ const ui = {
   lastHit: null,
   variant: 0,
   theta: Math.PI / 4,
+  noise: { kind: 'yok', p: 0.05 },
+  custom: null,
 };
 
-const level = () => LEVELS[ui.levelIdx];
+const level = () => ui.custom ?? LEVELS[ui.levelIdx];
+const noiseOn = () => ui.mode === 'sandbox' && ui.noise.kind !== 'yok' && ui.noise.p > 0;
+const noisyRho = () => runNoisy(nQubits(), ui.ops, ui.noise, ui.step - 1);
 const nQubits = () => (ui.mode === 'level' ? level().n : ui.sandboxN);
 const gateList = () => (ui.mode === 'level' ? level().gates : Object.keys(GATES));
 
@@ -83,7 +90,7 @@ function onCell(col, row) {
   const p = ui.pending;
   if (p) {
     ui.pending = null;
-    const op = { g: p.g, q: p.q, q2: row, col };
+    const op = { g: p.g, q: p.q, q2: row, col, ...(GATES[p.g].param ? { theta: ui.theta } : {}) };
     if (col === p.col && row !== p.q && rangeFree(col, p.q, row) && allowed(op)) {
       click(880);
       setDesc();
@@ -165,9 +172,15 @@ function renderCircuit() {
         el('circle', { class: 'oplus', cx: x, cy: cy(op.q2), r: 13 }, g);
         el('line', { class: 'link', x1: x - 13, y1: cy(op.q2), x2: x + 13, y2: cy(op.q2) }, g);
         el('line', { class: 'link', x1: x, y1: cy(op.q2) - 13, x2: x, y2: cy(op.q2) + 13 }, g);
-      } else if (op.g === 'CZ') {
+      } else if (op.g === 'CZ' || op.g === 'CP') {
         el('circle', { class: 'dot', cx: x, cy: cy(op.q), r: 6 }, g);
         el('circle', { class: 'dot', cx: x, cy: cy(op.q2), r: 6 }, g);
+        if (op.g === 'CP') {
+          const my = (cy(op.q) + cy(op.q2)) / 2;
+          el('rect', { class: 'cplabel', x: x - 20, y: my - 9, width: 40, height: 18, rx: 5 }, g);
+          const t = el('text', { class: 'gangle', x, y: my + 4, 'text-anchor': 'middle' }, g);
+          t.textContent = angleLabel(op.theta);
+        }
       } else {
         for (const r of [op.q, op.q2]) {
           el('line', { class: 'link', x1: x - 8, y1: cy(r) - 8, x2: x + 8, y2: cy(r) + 8 }, g);
@@ -208,7 +221,7 @@ function renderPalette() {
   for (const g of gateList()) {
     const b = document.createElement('button');
     b.className = `gate${GATES[g].arity === 2 ? ' two' : ''}${ui.selected === g ? ' sel' : ''}`;
-    b.textContent = g === 'CNOT' ? 'CNOT' : g === 'SWAP' ? 'SWAP' : GATES[g].label;
+    b.textContent = ['CNOT', 'SWAP', 'CP'].includes(g) ? g : GATES[g].label;
     b.setAttribute('aria-pressed', ui.selected === g);
     b.title = `${GATES[g].name}: ${GATES[g].desc}`;
     b.addEventListener('click', () => selectGate(g));
@@ -278,6 +291,7 @@ function renderSide() {
     p.className = 'fine';
     p.textContent = 'Her kapı serbest. Kendi durumlarını keşfet, sesini dinle, bağlantıyla paylaş.';
     card.appendChild(p);
+    card.appendChild(noisePanel());
   } else {
     card.innerHTML = '<h3>Bölümler</h3>';
     const list = document.createElement('div');
@@ -289,7 +303,7 @@ function renderSide() {
         list.appendChild(h);
       }
       const b = document.createElement('button');
-      if (i === ui.levelIdx && ui.mode === 'level') b.className = 'on';
+      if (i === ui.levelIdx && ui.mode === 'level' && !ui.custom) b.className = 'on';
       const stars = ui.progress[lv.id] || 0;
       b.innerHTML = `<span><span class="num">${i + 1}</span><span class="ttl"></span></span><span class="st">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>`;
       b.querySelector('.ttl').textContent = lv.title;
@@ -311,6 +325,41 @@ function renderSide() {
   side.appendChild(card);
 }
 
+function noisePanel() {
+  const box = document.createElement('div');
+  box.className = 'noise';
+  box.innerHTML = '<h3>Gürültü</h3>';
+  const sel = document.createElement('select');
+  sel.setAttribute('aria-label', 'Gürültü türü');
+  for (const [k, name] of [['yok', 'Kapalı (ideal donanım)'], ...Object.entries(CHANNELS).map(([k, c]) => [k, c.name])]) {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = name; o.selected = ui.noise.kind === k;
+    sel.appendChild(o);
+  }
+  const lab = document.createElement('label');
+  lab.className = 'noise-p';
+  const range = document.createElement('input');
+  Object.assign(range, { type: 'range', min: 0, max: 0.3, step: 0.01, value: ui.noise.p });
+  range.setAttribute('aria-label', 'Kapı başına gürültü olasılığı');
+  const out = document.createElement('output');
+  const desc = document.createElement('p');
+  desc.className = 'fine';
+  const sync = () => {
+    out.textContent = `p = ${Math.round(ui.noise.p * 100)}%`;
+    const on = ui.noise.kind !== 'yok';
+    lab.hidden = !on;
+    desc.textContent = on
+      ? `${CHANNELS[ui.noise.kind].desc} Her kapıdan sonra, kapının dokunduğu her kübite uygulanır.`
+      : 'Gerçek kuantum bilgisayarlar kusursuz değil. Bir gürültü türü seç ve Bloch oklarının nasıl küçüldüğünü izle.';
+  };
+  sel.addEventListener('change', () => { ui.noise.kind = sel.value; sync(); update(); });
+  range.addEventListener('input', () => { ui.noise.p = +range.value; sync(); update(); });
+  lab.append(range, out);
+  box.append(sel, lab, desc);
+  sync();
+  return box;
+}
+
 function renderStory() {
   const st = $('story');
   st.replaceChildren();
@@ -324,7 +373,7 @@ function renderStory() {
     return;
   }
   const lv = level();
-  h.textContent = `${ui.levelIdx + 1}. ${lv.title}`;
+  h.textContent = ui.custom ? `🎯 ${lv.title}` : `${ui.levelIdx + 1}. ${lv.title}`;
   p.textContent = lv.story;
   const meta = document.createElement('p');
   meta.className = 'hint';
@@ -359,6 +408,12 @@ function renderHelp(st) {
     <p>Her taban durumu pentatonik bir notadır. Ses şiddeti olasılığı, stereo konumu fazı izler. Süperpozisyon bir akor gibi duyulur, ölçüm tek notaya çöker.</p>
     <h3>Döndürme kapıları</h3>
     <p>Rx, Ry ve Rz, kübiti Bloch küresinde bir eksen etrafında istediğin θ açısıyla döndürür. H, X, S, T gibi kapılar aslında bunların özel açılarıdır (global faz farkıyla). Ry ile ölçüm olasılıklarını istediğin orana ayarlayabilirsin: P(1) = sin²(θ/2).</p>
+    <h3>Kontrollü faz ve Fourier</h3>
+    <p>CP(θ), iki kübit de |1⟩ iken e^{iθ} fazı ekler; devrede iki nokta ve aradaki açı etiketiyle görünür. Kuantum Fourier dönüşümü bu kapılardan kurulur ve Shor algoritmasındaki faz kestiriminin temelidir.</p>
+    <h3>Gürültü modu</h3>
+    <p>Serbest Laboratuvar'da gerçek donanımın kusurlarını açabilirsin. Simülatör o zaman durum vektörü yerine <b>yoğunluk matrisi</b> ρ ile çalışır ve her kapıdan sonra seçtiğin kanalı uygular: <i>depolarize</i> (rastgele Pauli hataları), <i>genlik sönümü</i> (T1: enerji kaybı) ya da <i>faz bozulması</i> (T2: faz bilgisinin kaybı). Saflık tr(ρ²) 1'den düştükçe durum "klasikleşir". Bugünkü kuantum bilgisayarların hata düzeltmeye neden bu kadar ihtiyaç duyduğunu burada görebilirsin.</p>
+    <h3>Meydan okuma</h3>
+    <p>Laboratuvarda bir durum kur ve <b>🎯 Meydan oku</b> düğmesine bas. Kopyalanan bağlantıyı açan kişi hedef durumu görür ama devreyi görmez; aynı kapılarla aynı durumu kurmaya çalışır.</p>
     <h3>Gizli kutular</h3>
     <p>Algoritmalar kısmında içini göremediğin kilitli kutular var. <b>Kehanet</b> (İng. <i>oracle</i>) kutuları gizli bir fonksiyonu saklar: Deutsch, Bernstein–Vazirani ve Grover algoritmaları onu klasik bir bilgisayardan daha az sorgulayarak çözer. <b>Mesaj</b> ve <b>ψ</b> kutuları ise sana bilinmeyen bir mesaj ya da durum verir. Her durumda devren kutunun tüm olası hallerinde doğru çalışmalı. Sağdaki listeden bir hal seçip devreni onunla izleyebilirsin.</p>
     <h3>OpenQASM ve gerçek donanım</h3>
@@ -419,16 +474,23 @@ function update({ silent = false } = {}) {
     }
   }
   const ents = [];
+  const rho = noiseOn() ? noisyRho() : null;
   for (let q = 0; q < n; q++) {
-    const v = blochVector(s, q);
+    const v = rho ? rhoBloch(rho, q) : blochVector(s, q);
     const f = wrap.children[q];
     drawBloch(f.querySelector('canvas'), v);
-    const S = entanglementEntropy(s, q);
+    const S = rho ? entropyFromBloch(v) : entanglementEntropy(s, q);
     ents.push(S);
-    f.querySelector('figcaption').textContent = `q${q} · |r| = ${Math.hypot(v.x, v.y, v.z).toFixed(2)} · dolanıklık ${S.toFixed(2)} bit`;
+    f.querySelector('figcaption').textContent = `q${q} · |r| = ${Math.hypot(v.x, v.y, v.z).toFixed(2)} · ${rho ? 'entropi' : 'dolanıklık'} ${S.toFixed(2)} bit`;
+  }
+  const info = $('noiseInfo');
+  info.hidden = !rho;
+  if (rho) {
+    info.textContent = `Gürültülü donanımda: ideal duruma benzerlik ${(rhoFidelity(rho, s) * 100).toFixed(1)}%, saflık tr(ρ²) = ${purity(rho).toFixed(3)}. Yukarıdaki çemberler ideal durumu, Bloch küreleri ve ölçümler gürültülü sonucu gösterir.`;
   }
   const maxEnt = Math.max(...ents);
-  $('entNote').textContent = n < 2 ? 'Tek kübit: dolanıklık için en az iki kübit gerekir.'
+  $('entNote').textContent = rho ? 'Gürültü açık: oklar hem dolanıklık hem de çevreyle etkileşim (dekoherans) yüzünden kısalır. Entropi artık ikisini birlikte ölçer.'
+    : n < 2 ? 'Tek kübit: dolanıklık için en az iki kübit gerekir.'
     : maxEnt > 0.99 ? 'Maksimum dolanıklık! Kübitlerin tek tek bilgisi kalmadı; her şey ilişkide.'
       : maxEnt > 0.01 ? 'Kısmen dolanık: oklar kürenin içine çekiliyor.'
         : 'Çarpım durumu: her kübit kendi başına tanımlı.';
@@ -478,11 +540,11 @@ function win() {
   const used = playerGateCount(ui.ops);
   const stars = starsFor(lv, ui.ops);
   const prev = ui.progress[lv.id] || 0;
-  if (stars > prev) { ui.progress[lv.id] = stars; store.set('dolanik.progress', ui.progress); }
+  if (!ui.custom && stars > prev) { ui.progress[lv.id] = stars; store.set('dolanik.progress', ui.progress); }
   $('winStars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-  $('winTitle').textContent = ui.levelIdx === LEVELS.length - 1 ? 'Tüm bölümler bitti!' : 'Başardın!';
+  $('winTitle').textContent = ui.custom ? 'Meydan okumayı kazandın!' : ui.levelIdx === LEVELS.length - 1 ? 'Tüm bölümler bitti!' : 'Başardın!';
   $('winText').textContent = `${used} kapı kullandın (ideal: ${lv.par}). ${stars < 3 ? 'Daha az kapıyla tekrar dene?' : 'Kusursuz devre.'}`;
-  $('next').hidden = ui.levelIdx >= LEVELS.length - 1;
+  $('next').hidden = !!ui.custom || ui.levelIdx >= LEVELS.length - 1;
   $('win').hidden = false;
   playState(runCircuit(lv.n, playableOps()), 2.4);
   renderSide();
@@ -517,7 +579,7 @@ function renderHist(counts, hit) {
 
 function measureOnce() {
   const s = currentState();
-  const k = sample(s);
+  const k = noiseOn() ? sampleRho(noisyRho()) : sample(s);
   const counts = new Array(s.re.length).fill(0);
   counts[k] = 1;
   renderHist(counts, k);
@@ -532,20 +594,32 @@ function measureOnce() {
 }
 
 function measureMany() {
-  renderHist(measureShots(currentState(), 256), null);
+  renderHist(noiseOn() ? measureShotsRho(noisyRho(), 256) : measureShots(currentState(), 256), null);
 }
 
 // ---------- paylaşım (yalnızca laboratuvar) ----------
 function writeHash() {
-  const code = ui.ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}.${o.col}${o.theta != null ? '@' + +o.theta.toPrecision(12) : ''}`).join('_');
+  const code = encodeOps(ui.ops);
   history.replaceState(null, '', `#lab=${ui.sandboxN}~${code}`);
 }
+function encodeOps(ops) {
+  return ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}.${o.col}${o.theta != null ? '@' + +o.theta.toPrecision(12) : ''}`).join('_');
+}
+
 function readHash() {
+  const c = location.hash.match(/^#meydan=([A-Za-z0-9_-]+)$/);
+  if (c) return loadChallenge(c[1]);
   const m = location.hash.match(/^#lab=([1-4])~(.*)$/);
   if (!m) return false;
   ui.sandboxN = +m[1];
+  ui.ops = parseOps(ui.sandboxN, m[2]);
+  return 'lab';
+}
+
+function parseOps(n, code) {
+  const saved = ui.ops;
   ui.ops = [];
-  for (const part of m[2].split('_').filter(Boolean)) {
+  for (const part of code.split('_').filter(Boolean)) {
     const pm = part.match(/^([A-Z]+)\.(\d)(?:-(\d))?\.(\d{1,2})(?:@(-?[\d.]+(?:e-?\d+)?))?$/);
     if (!pm || !GATES[pm[1]]) continue;
     if (!!GATES[pm[1]].param !== (pm[5] != null)) continue;
@@ -553,14 +627,49 @@ function readHash() {
     if (pm[5] != null) op.theta = +pm[5];
     if (pm[3] != null) op.q2 = +pm[3];
     const arityOk = (GATES[op.g].arity === 2) === (op.q2 != null);
-    const n = ui.sandboxN;
     if (!arityOk || op.q >= n || (op.q2 ?? 0) >= n || op.col >= LAB_COLS || op.q === op.q2) continue;
     const [lo, hi] = span(op);
     let free = true;
     for (let r = lo; r <= hi; r++) if (occupant(op.col, r)) free = false;
     if (free) ui.ops.push(op);
   }
-  return true;
+  const ops = ui.ops;
+  ui.ops = saved;
+  return ops;
+}
+
+// ---------- meydan okuma ----------
+const b64 = {
+  enc: (t) => btoa(t).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: (t) => atob(t.replace(/-/g, '+').replace(/_/g, '/')),
+};
+
+function challengeLink() {
+  const used = ui.ops.filter((o) => !o.locked);
+  if (!used.length) { toast('Önce devreye birkaç kapı koy.'); return null; }
+  return `${location.origin}${location.pathname}#meydan=${b64.enc(`${ui.sandboxN}~${encodeOps(used)}`)}`;
+}
+
+function loadChallenge(code) {
+  let text;
+  try { text = b64.dec(code); } catch { return false; }
+  const m = text.match(/^([1-4])~(.*)$/);
+  if (!m) return false;
+  const n = +m[1];
+  const ops = parseOps(n, m[2]);
+  if (!ops.length) return false;
+  const s = runCircuit(n, ops);
+  const gates = Object.keys(GATES).filter((g) => ops.some((o) => o.g === g));
+  ui.custom = {
+    id: 'meydan',
+    title: 'Meydan Okuma',
+    chapter: '',
+    story: `Bir arkadaşın ${n} kübitle bu durumu kurdu ve sana meydan okuyor: aynısını kurabilir misin? Yalnızca onun kullandığı kapılar elinde. O, ${ops.length} kapı kullandı.`,
+    hint: 'Hedefteki çemberlerin boyutuna (olasılık) ve rengine (faz) bak. Bloch oklarının kısalması dolanıklığı ele verir.',
+    n, gates, par: ops.length,
+    target: Array.from(s.re, (r, i) => [r, s.im[i]]),
+  };
+  return 'challenge';
 }
 
 // ---------- modlar ----------
@@ -576,6 +685,7 @@ function setMode(mode) {
 }
 
 function loadLevel(i) {
+  ui.custom = null;
   ui.levelIdx = Math.max(0, Math.min(LEVELS.length - 1, i));
   store.set('dolanik.level', ui.levelIdx);
   const lv = level();
@@ -589,7 +699,18 @@ function loadLevel(i) {
   ui.step = COLS;
   $('step').value = COLS;
   ui.shown = zeroState(lv.n);
-  history.replaceState(null, '', location.pathname);
+  if (!ui.custom) history.replaceState(null, '', location.pathname);
+  renderAll();
+}
+
+function startChallenge() {
+  setMode('level');
+  COLS = LAB_COLS;
+  $('step').max = COLS; ui.step = COLS; $('step').value = COLS;
+  const lv = ui.custom;
+  ui.target = stateFromAmplitudes(lv.n, lv.target);
+  ui.ops = []; ui.history = []; ui.selected = lv.gates[0]; ui.pending = null; ui.won = false; ui.variant = 0;
+  ui.shown = zeroState(lv.n);
   renderAll();
 }
 
@@ -663,6 +784,12 @@ $('qasmImport').addEventListener('click', () => {
   }
 });
 
+$('challenge').addEventListener('click', async () => {
+  const link = challengeLink();
+  if (!link) return;
+  try { await navigator.clipboard.writeText(link); toast('Meydan okuma bağlantısı kopyalandı. Arkadaşına gönder!'); } catch { prompt('Bu bağlantıyı paylaş:', link); }
+});
+
 $('stay').addEventListener('click', () => { $('win').hidden = true; });
 $('next').addEventListener('click', () => { $('win').hidden = true; loadLevel(ui.levelIdx + 1); });
 $('win').addEventListener('click', (e) => { if (e.target.id === 'win') $('win').hidden = true; });
@@ -692,7 +819,10 @@ let rz;
 window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => ui.mode !== 'help' && update({ silent: true }), 120); });
 
 // ---------- başlat ----------
-if (readHash()) {
+const fromHash = readHash();
+if (fromHash === 'challenge') {
+  startChallenge();
+} else if (fromHash === 'lab') {
   setMode('sandbox');
   ui.selected = 'H';
   ui.shown = zeroState(ui.sandboxN);

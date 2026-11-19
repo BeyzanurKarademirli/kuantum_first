@@ -67,6 +67,11 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
 .qcount { display: flex; gap: 6px; margin: 0 8px 12px; }
 .qcount button.on { border-color: var(--accent); }
 .side .fine { margin: 8px; }
+.noise { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
+.noise select { width: calc(100% - 16px); margin: 0 8px; font: inherit; font-size: 13px; color: var(--ink); background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+.noise-p { display: flex; align-items: center; gap: 8px; margin: 8px; font-size: 12px; color: var(--ink-dim); }
+.noise-p input { flex: 1; min-width: 0; }
+.noise-info { font-size: 12px; color: var(--warn); margin: 8px 0 0; }
 
 .story h2 { font-size: 18px; margin-bottom: 4px; }
 .story p { margin: 4px 0; }
@@ -101,6 +106,7 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
 #circuit .future { opacity: .3; }
 #circuit .oracle { fill: color-mix(in srgb, var(--ink) 82%, var(--bg)); stroke: var(--accent2); stroke-width: 2; }
 #circuit .otext { fill: var(--bg); font: italic 700 16px Georgia, serif; pointer-events: none; }
+#circuit .cplabel { fill: var(--card); stroke: var(--accent); stroke-width: 1.5; }
 #circuit .gangle { fill: var(--ink-dim); font: 600 10px ui-monospace, monospace; pointer-events: none; }
 #circuit .disabled { fill: color-mix(in srgb, var(--ink-dim) 8%, transparent); }
 

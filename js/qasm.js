@@ -5,11 +5,11 @@
 import { sortOps, GATES, angleLabel } from './quantum.js';
 
 const TO_QASM = {
-  H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz',
+  H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz', CP: 'cp',
 };
 const FROM_QASM = Object.fromEntries(Object.entries(TO_QASM).map(([k, v]) => [v, k]));
 // sık görülen eş adlar
-Object.assign(FROM_QASM, { cnot: 'CNOT', CX: 'CNOT' });
+Object.assign(FROM_QASM, { cnot: 'CNOT', CX: 'CNOT', cu1: 'CP', cphase: 'CP' });
 
 export function toQasm(n, ops, { version = 3, measure = true, comment } = {}) {
   const v3 = version === 3;
@@ -28,9 +28,11 @@ export function toQasm(n, ops, { version = 3, measure = true, comment } = {}) {
       lines.push(`cx ${a}, ${b};`, `cx ${b}, ${a};`, `cx ${a}, ${b};`);
       continue;
     }
+    // qelib1.inc'te cp yok; eşdeğeri cu1
+    const name2 = op.g === 'CP' && !v3 ? 'cu1' : name;
     const args = op.q2 != null ? `q[${op.q}], q[${op.q2}]` : `q[${op.q}]`;
     const param = GATES[op.g].param ? `(${angleLabel(op.theta, { ascii: true })})` : '';
-    lines.push(`${name}${param} ${args};`);
+    lines.push(`${name2}${param} ${args};`);
   }
   if (measure) lines.push(v3 ? 'c = measure q;' : 'measure q -> c;');
   return lines.join('\n') + '\n';
@@ -63,7 +65,7 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
     const theta = isParam ? evalAngle(m[2]) : null;
     m = [m[0], m[1], m[3], m[4], m[5], m[6]];
     if (m[2] !== reg || (m[4] && m[4] !== reg)) throw new Error(`Bilinmeyen yazmaç: ${m[2]}`);
-    const two = g === 'CNOT' || g === 'CZ' || g === 'SWAP';
+    const two = GATES[g].arity === 2;
     if (two !== (m[4] != null)) throw new Error(`${m[1]} kapısına yanlış sayıda kübit verildi.`);
     gates.push({ g, q: +m[3], ...(two ? { q2: +m[5] } : {}), ...(isParam ? { theta } : {}) });
   }

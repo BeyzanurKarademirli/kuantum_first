@@ -8,13 +8,16 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 ## Neler var?
 
-- **4 kısımda 23 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*. Tek bit çevirmekten
+- **5 kısımda 25 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*, *Fourier*. Tek bit çevirmekten
   Bell çiftine, GHZ üçlüsüne, singlet durumuna ve "X kapısı sadece üst kübite takılabiliyor" gibi
   kısıtlı bulmacalara kadar. Her bölüm ideal kapı sayısına göre ★ ile puanlanır.
 - **Gerçek algoritmalar ve protokoller** — *Deutsch*, *Bernstein–Vazirani*, *Grover*,
-  *süper yoğun kodlama* ve *kuantum ışınlanma*. İçi görünmeyen kilitli kutular (kehanet, mesaj,
+  *süper yoğun kodlama*, *kuantum ışınlanma*, *kuantum Fourier dönüşümü* ve *faz kestirimi*. İçi görünmeyen kilitli kutular (kehanet, mesaj,
   bilinmeyen durum) var; devren kutunun her olası halinde doğru çalışmalı.
-- **12 kapı** — H, X, Y, Z, S, T, CNOT, CZ, SWAP ve açılı döndürmeler Rx(θ), Ry(θ), Rz(θ).
+- **13 kapı** — H, X, Y, Z, S, T, CNOT, CZ, SWAP, kontrollü faz CP(θ) ve açılı döndürmeler Rx(θ), Ry(θ), Rz(θ).
+- **Gürültü modu** — yoğunluk matrisi simülatörü; depolarize, genlik sönümü (T1) ve faz bozulması (T2)
+  kanalları. Bloch oklarının dekoheransla küçülüşünü, saflığın düşüşünü ve hatalı ölçümleri gör.
+- **Meydan okuma bağlantıları** — laboratuvarda kurduğun durumu bulmaca olarak arkadaşına gönder.
 - **OpenQASM 2.0 / 3.0** — devreni endüstri standardı dile aktar, IBM Quantum, Qiskit, Cirq ya da
   Amazon Braket'te (gerçek donanım dahil) çalıştır. Başka yerde yazılmış QASM kodunu içe aktar.
 - **Serbest Laboratuvar** — 4 kübite kadar, 12 sütun, bütün kapılar.
@@ -47,7 +50,8 @@ npm test
 
 **Qiskit çapraz doğrulaması:** Her push'ta CI, bütün bölüm çözümlerini (kehanet varyantları dahil) ve
 60 tohumlu rastgele devreyi OpenQASM 2 ve 3 olarak IBM Qiskit'e yükler; Qiskit'in durum vektörünü
-Dolanık'ınkiyle karşılaştırır (196/196 birebir uyum, keyfi açılı döndürmeler dahil). Yerelde:
+Dolanık'ınkiyle karşılaştırır. Gürültülü devrelerde Qiskit `DensityMatrix` + `Kraus` kanallarıyla
+yoğunluk matrisi eleman eleman karşılaştırılır (230/230 birebir uyum). Yerelde:
 
 ```bash
 pip install -r tests/qiskit/requirements.txt
@@ -69,6 +73,7 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/quantum.js` | Durum-vektörü simülatörü: kapılar, Bloch vektörü, dolanıklık entropisi, ölçüm |
 | `js/levels.js` | Bölümler ve hedef durumlar |
 | `js/game.js` | Kehanet kutuları, bölüm değerlendirme, yıldızlar |
+| `js/noise.js` | Yoğunluk matrisi simülatörü ve gürültü kanalları |
 | `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
 | `js/audio.js` | Web Audio ile "süperpozisyonu dinle" |
@@ -92,11 +97,12 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 - [x] OpenQASM 2/3 dışa-içe aktarma
 - [x] Qiskit ile otomatik çapraz doğrulama
 - [x] Bernstein–Vazirani, kuantum ışınlanma, süper yoğun kodlama
-- [ ] Kuantum Fourier dönüşümü ve faz kestirimi
+- [x] Kuantum Fourier dönüşümü ve faz kestirimi
+- [ ] Kuantum hata düzeltme (3 kübitlik bit-çevirme kodu, gürültüyle birlikte)
 - [ ] Orta-devre ölçümü ve klasik kontrol
-- [ ] Gürültü modu: dekoherans kürenin içine nasıl çeker?
+- [x] Gürültü modu: dekoherans kürenin içine nasıl çeker?
 - [ ] İngilizce dil seçeneği
-- [ ] Kendi bölümünü tasarla ve bağlantıyla paylaş
+- [x] Kendi bölümünü tasarla ve bağlantıyla paylaş (meydan okuma)
 
 ## Lisans
 

@@ -1,5 +1,13 @@
 # Değişiklik günlüğü
 
+## 0.4.0 — 2026-11-19
+- Kontrollü faz kapısı CP(θ) (QASM 3'te `cp`, QASM 2'de `cu1`).
+- Yeni "Fourier" kısmı: Fourier Saati (QFT) ve Faz Kestirimi (4 gizli faz). Toplam 25 bölüm.
+- Gürültü modu: yoğunluk matrisi simülatörü; depolarize, genlik sönümü (T1), faz bozulması (T2);
+  saflık ve ideal duruma benzerlik göstergesi; gürültülü ölçüm.
+- Meydan okuma bağlantıları: laboratuvardaki durumu bulmaca olarak paylaş.
+- Qiskit doğrulamasına gürültülü yoğunluk matrisleri eklendi (230/230).
+
 ## 0.3.0 — 2026-11-19
 - Döndürme kapıları Rx(θ), Ry(θ), Rz(θ); açı seçici; devrede açı etiketi (π/3, −π/4…).
 - Yeni bölümler: Çeyrek Şans, Altıda Bir Tur, Yarım Gönüllü Dolanıklık, Bernstein–Vazirani,

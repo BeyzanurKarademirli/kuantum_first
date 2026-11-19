@@ -27,6 +27,7 @@ export const GATES = {
   SWAP: { arity: 2, label: '×', name: 'SWAP', desc: 'İki kübitin durumlarını takas eder.' },
   RX: { arity: 1, param: true, label: 'Rx', name: 'Rx(θ)', desc: 'Bloch küresinde X ekseni etrafında θ kadar döndürür. Açıyı yandaki listeden seç.' },
   RY: { arity: 1, param: true, label: 'Ry', name: 'Ry(θ)', desc: 'Y ekseni etrafında θ kadar döndürür. Genlikler gerçek kalır; olasılığı istediğin oranda ayarlamanın yolu.' },
+  CP: { arity: 2, param: true, label: 'P', name: 'Kontrollü faz CP(θ)', desc: 'İki kübit de |1⟩ ise e^{iθ} fazı ekler. Simetriktir; CP(π) = CZ. Kuantum Fourier dönüşümünün yapı taşı.' },
   RZ: { arity: 1, param: true, label: 'Rz', name: 'Rz(θ)', desc: 'Z ekseni etrafında θ kadar döndürür: yalnızca göreli fazı değiştirir.' },
 };
 
@@ -128,6 +129,10 @@ export function applyOp(s, op) {
     case 'CNOT': return applyMatrix(s, op.q2, MATRICES.X, bitOf(s.n, op.q));
     case 'CZ': return applyMatrix(s, op.q2, MATRICES.Z, bitOf(s.n, op.q));
     case 'SWAP': return applySwap(s, op.q, op.q2);
+    case 'CP': {
+      if (typeof op.theta !== 'number' || !Number.isFinite(op.theta)) throw new Error('CP için açı gerekli');
+      return applyMatrix(s, op.q2, [[1, 0], [0, 0], [0, 0], [Math.cos(op.theta), Math.sin(op.theta)]], bitOf(s.n, op.q));
+    }
     case 'RX': case 'RY': case 'RZ':
       if (typeof op.theta !== 'number' || !Number.isFinite(op.theta)) throw new Error(`${op.g} için açı gerekli`);
       return applyMatrix(s, op.q, rotationMatrix(op.g, op.theta));
@@ -186,7 +191,11 @@ export function blochVector(s, q) {
 
 // Kübit q ile geri kalanı arasındaki dolanıklık entropisi (bit cinsinden, 0..1)
 export function entanglementEntropy(s, q) {
-  const { x, y, z } = blochVector(s, q);
+  return entropyFromBloch(blochVector(s, q));
+}
+
+// Tek kübitlik (indirgenmiş) durumun von Neumann entropisi, Bloch vektöründen
+export function entropyFromBloch({ x, y, z }) {
   const r = Math.min(1, Math.hypot(x, y, z));
   const l1 = (1 + r) / 2, l2 = (1 - r) / 2;
   const h = (p) => (p > 1e-12 ? -p * Math.log2(p) : 0);
