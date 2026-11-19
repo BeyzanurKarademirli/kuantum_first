@@ -1,0 +1,11 @@
+{
+  "name": "kuantum-first",
+  "private": true,
+  "type": "module",
+  "description": "Dolanık — tarayıcıda kuantum devre bulmacası",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dolanık — Kuantum Devre Bulmacası</title>
+  <meta name="description" content="Tarayıcıda çalışan, ücretsiz ve açık kaynak kuantum devre bulmaca oyunu. Kapıları yerleştir, genlikleri gör, süperpozisyonu dinle.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='12' fill='%2378f0d0'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%23b48cff' stroke-width='6'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%2378f0d0' stroke-width='6' transform='rotate(60 50 50)'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%23ff9db0' stroke-width='6' transform='rotate(120 50 50)'/></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">⟨ψ|</span>
+      <div>
+        <h1>Dolanık</h1>
+        <p class="tag">kuantum devre bulmacası</p>
+      </div>
+    </div>
+    <nav class="modes" role="tablist">
+      <button role="tab" data-mode="level" class="on">Bölümler</button>
+      <button role="tab" data-mode="sandbox">Serbest Laboratuvar</button>
+      <button role="tab" data-mode="help">Nasıl okunur?</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside class="side" id="side"></aside>
+
+    <section class="work">
+      <div class="card story" id="story"></div>
+
+      <div class="card">
+        <div class="palette" id="palette" aria-label="Kapılar"></div>
+        <p class="gate-desc" id="gateDesc">Bir kapı seç, sonra devrede bir hücreye tıkla. Kapıya tekrar tıklayınca silinir.</p>
+        <div class="circuit-wrap"><svg id="circuit" role="img" aria-label="Kuantum devresi"></svg></div>
+        <div class="controls">
+          <label class="step">Zaman <input type="range" id="step" min="0" max="8" value="8"><output id="stepOut">tümü</output></label>
+          <div class="btns">
+            <button id="undo" title="Geri al (Ctrl+Z)">↶ Geri</button>
+            <button id="clear">Temizle</button>
+            <button id="listen" title="Durumu dinle">♪ Dinle</button>
+            <label class="toggle"><input type="checkbox" id="autoSound"> sesli mod</label>
+            <button id="share" class="sandbox-only">🔗 Paylaş</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card measure">
+        <div class="measure-head">
+          <h2>Ölçüm</h2>
+          <div class="btns">
+            <button id="m1">Bir kez ölç</button>
+            <button id="m256">256 kez ölç</button>
+          </div>
+        </div>
+        <div id="hist" class="hist"></div>
+        <p class="fine">Rastgelelik tarayıcının kriptografik üretecinden gelir. Bu bir simülasyon: gerçek bir kuantum bilgisayarın ürettiği olasılık dağılımının aynısını üretir.</p>
+      </div>
+    </section>
+
+    <section class="view">
+      <div class="card">
+        <h2>Durum <small id="stateText" class="mono"></small></h2>
+        <canvas id="amps" class="amps"></canvas>
+        <div class="legend"><span class="wheel" aria-hidden="true"></span> çember boyu = genlik, renk ve ibre = faz</div>
+      </div>
+      <div class="card" id="targetCard">
+        <h2>Hedef <span id="fid" class="fid"></span></h2>
+        <canvas id="target" class="amps small"></canvas>
+        <div class="meter"><div id="fidBar"></div></div>
+      </div>
+      <div class="card">
+        <h2>Bloch küreleri <small>her kübit tek başına</small></h2>
+        <div id="blochs" class="blochs"></div>
+        <p class="fine" id="entNote"></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="win" class="win" hidden>
+    <div class="win-box">
+      <div class="stars" id="winStars"></div>
+      <h2 id="winTitle">Başardın!</h2>
+      <p id="winText"></p>
+      <div class="btns"><button id="stay">Devrede kal</button><button id="next" class="primary">Sonraki bölüm →</button></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer class="foot">
+    Açık kaynak · MIT lisansı · reklam yok, takip yok, hesap yok. İlerlemen yalnızca kendi tarayıcında saklanır.
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
