@@ -99,6 +99,20 @@ export const ORACLES = {
     }),
     score: (s, v) => marginalProb(s, [0, 1], bitsOf(v.phase, 2)),
   },
+  // 3 kübitlik bit-çevirme kodu: ψ kutusu q0'ı hazırlar, hata kutusu en fazla bir kübiti çevirir
+  bitflip: {
+    label: '?',
+    variants: [PREPS[3], PREPS[0]].flatMap((p) => [null, 0, 1, 2].map((e) => ({
+      name: `ψ = ${p.name}, ${e == null ? 'hata yok' : `X hatası q${e}`}`,
+      goal: 'q0 = ψ',
+      parts: { prep: p.ops, err: e == null ? [] : [{ g: 'X', q: e }] },
+      bloch: blochOfOps(p.ops),
+    }))),
+    score: (s, v) => {
+      const b = blochVector(s, 0);
+      return (1 + b.x * v.bloch.x + b.y * v.bloch.y + b.z * v.bloch.z) / 2;
+    },
+  },
   // Işınlanma: q0 bilinmeyen bir durumda hazırlanır; q2'de aynısı belirmeli
   teleport: {
     label: 'ψ',
@@ -119,7 +133,8 @@ export function expandOracle(ops, variant) {
   for (const op of ops) {
     if (op.g !== 'ORACLE') { out.push(op); continue; }
     if (!variant) continue;
-    variant.ops.forEach((sub, k) => out.push({ ...sub, col: op.col + (k + 1) / 100 }));
+    const subs = op.part ? variant.parts[op.part] : variant.ops;
+    subs.forEach((sub, k) => out.push({ ...sub, col: op.col + (k + 1) / 100 }));
   }
   return out;
 }
@@ -137,8 +152,18 @@ export function oracleRows(level) {
 // Bölümün başlangıçta kilitli (oyuncunun silemeyeceği) işlemleri
 export function lockedOps(level) {
   if (!level.oracle) return [];
+  if (level.oracle.boxes) {
+    return level.oracle.boxes.map((b) => ({
+      g: 'ORACLE', col: b.col, q: b.rows[0], q2: b.rows[1], part: b.part, label: b.label, locked: true,
+    }));
+  }
   const [q, q2] = oracleRows(level);
   return [{ g: 'ORACLE', col: level.oracle.col, q, q2, locked: true }];
+}
+
+// Kapının dokunduğu kübitler
+export function opRows(op) {
+  return [op.q, op.q2, op.q3].filter((x) => x != null);
 }
 
 // Kapı bu bölümde bu kübitlere konabilir mi?

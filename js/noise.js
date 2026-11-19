@@ -97,6 +97,7 @@ export function runNoisy(n, ops, noise, upToCol = Infinity) {
     if (kraus) {
       r = applyChannel(r, op.q, kraus);
       if (op.q2 != null) r = applyChannel(r, op.q2, kraus);
+      if (op.q3 != null) r = applyChannel(r, op.q3, kraus);
     }
   }
   return r;

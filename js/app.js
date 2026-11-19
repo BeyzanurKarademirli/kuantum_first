@@ -6,7 +6,7 @@ import { LEVELS } from './levels.js';
 import { drawAmplitudes, drawBloch, lerpState } from './viz.js';
 import { playState, click } from './audio.js';
 import {
-  evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor, placementAllowed,
+  evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor, placementAllowed, opRows,
 } from './game.js';
 import { toQasm, fromQasm } from './qasm.js';
 import {
@@ -59,8 +59,8 @@ function toast(msg) {
 
 // ---------- devre modeli ----------
 function span(op) {
-  const a = op.q, b = op.q2 ?? op.q;
-  return [Math.min(a, b), Math.max(a, b)];
+  const rows = opRows(op);
+  return [Math.min(...rows), Math.max(...rows)];
 }
 function occupant(col, row) {
   return ui.ops.find((op) => {
@@ -89,16 +89,26 @@ function commit(newOps) {
 function onCell(col, row) {
   const p = ui.pending;
   if (p) {
+    const rows = [...p.rows, row];
+    const free = col === p.col && !p.rows.includes(row) && rangeFree(col, Math.min(...rows), Math.max(...rows));
+    if (free && rows.length < GATES[p.g].arity) {
+      p.rows = rows;
+      click(770);
+      $('gateDesc').textContent = 'Şimdi aynı sütunda hedef kübite tıkla.';
+      renderCircuit();
+      return;
+    }
     ui.pending = null;
-    const op = { g: p.g, q: p.q, q2: row, col, ...(GATES[p.g].param ? { theta: ui.theta } : {}) };
-    if (col === p.col && row !== p.q && rangeFree(col, p.q, row) && allowed(op)) {
+    const [q, q2, q3] = rows;
+    const op = { g: p.g, q, q2, ...(q3 != null ? { q3 } : {}), col, ...(GATES[p.g].param ? { theta: ui.theta } : {}) };
+    if (free && allowed(op)) {
       click(880);
       setDesc();
       commit([...ui.ops, op]);
     } else {
-      toast(col === p.col && row !== p.q && rangeFree(col, p.q, row)
-        ? `${GATES[p.g].name} bu bölümde bu iki kübit arasına konamaz.`
-        : 'İkinci kübit aynı sütunda, boş bir hücrede olmalı.');
+      toast(free
+        ? `${GATES[p.g].name} bu bölümde bu kübitler arasına konamaz.`
+        : 'Kübitler aynı sütunda, boş hücrelerde ve farklı olmalı.');
       setDesc();
       renderCircuit();
     }
@@ -110,10 +120,11 @@ function onCell(col, row) {
   const g = ui.selected;
   if (!g) { toast('Önce yukarıdan bir kapı seç.'); return; }
   if (!allowed({ g, q: row })) { toast(`${GATES[g].name} bu bölümde yalnızca belirli kübitlere takılabilir.`); return; }
-  if (GATES[g].arity === 2) {
-    if (nQubits() < 2) { toast('Bu kapı için en az iki kübit gerekir.'); return; }
-    ui.pending = { g, q: row, col };
-    $('gateDesc').textContent = g === 'CNOT' ? 'Şimdi aynı sütunda hedef kübite tıkla.' : 'Şimdi aynı sütunda ikinci kübite tıkla.';
+  if (GATES[g].arity > 1) {
+    if (nQubits() < GATES[g].arity) { toast(`Bu kapı için en az ${GATES[g].arity} kübit gerekir.`); return; }
+    ui.pending = { g, rows: [row], col };
+    $('gateDesc').textContent = g === 'CCX' ? 'Şimdi aynı sütunda ikinci kontrol kübitine tıkla.'
+      : g === 'CNOT' ? 'Şimdi aynı sütunda hedef kübite tıkla.' : 'Şimdi aynı sütunda ikinci kübite tıkla.';
     renderCircuit();
     return;
   }
@@ -162,10 +173,18 @@ function renderCircuit() {
       const [lo, hi] = span(op);
       el('rect', { class: 'oracle', x: x - 22, y: 4 + lo * CH + 6, width: 44, height: (hi - lo + 1) * CH - 12, rx: 10 }, g);
       const t = el('text', { class: 'otext', x, y: 4 + ((lo + hi + 1) * CH) / 2 + 5, 'text-anchor': 'middle' }, g);
-      t.textContent = oracleOf(level()).label;
+      t.textContent = op.label ?? oracleOf(level()).label;
       continue;
     }
-    if (GATES[op.g].arity === 2) {
+    if (op.g === 'CCX') {
+      const [lo, hi] = span(op);
+      el('line', { class: 'link', x1: x, y1: cy(lo), x2: x, y2: cy(hi) }, g);
+      el('circle', { class: 'dot', cx: x, cy: cy(op.q), r: 6 }, g);
+      el('circle', { class: 'dot', cx: x, cy: cy(op.q2), r: 6 }, g);
+      el('circle', { class: 'oplus', cx: x, cy: cy(op.q3), r: 13 }, g);
+      el('line', { class: 'link', x1: x - 13, y1: cy(op.q3), x2: x + 13, y2: cy(op.q3) }, g);
+      el('line', { class: 'link', x1: x, y1: cy(op.q3) - 13, x2: x, y2: cy(op.q3) + 13 }, g);
+    } else if (GATES[op.g].arity === 2) {
       el('line', { class: 'link', x1: x, y1: cy(op.q), x2: x, y2: cy(op.q2) }, g);
       if (op.g === 'CNOT') {
         el('circle', { class: 'dot', cx: x, cy: cy(op.q), r: 6 }, g);
@@ -201,7 +220,7 @@ function renderCircuit() {
     }
   }
   if (ui.pending) {
-    el('circle', { class: 'pending', cx: cx(ui.pending.col), cy: cy(ui.pending.q), r: 18 }, svg);
+    for (const r of ui.pending.rows) el('circle', { class: 'pending', cx: cx(ui.pending.col), cy: cy(r), r: 18 }, svg);
   }
   for (let c = 0; c < COLS; c++) {
     for (let r = 0; r < n; r++) {
@@ -220,8 +239,8 @@ function renderPalette() {
   pal.replaceChildren();
   for (const g of gateList()) {
     const b = document.createElement('button');
-    b.className = `gate${GATES[g].arity === 2 ? ' two' : ''}${ui.selected === g ? ' sel' : ''}`;
-    b.textContent = ['CNOT', 'SWAP', 'CP'].includes(g) ? g : GATES[g].label;
+    b.className = `gate${GATES[g].arity > 1 ? ' two' : ''}${ui.selected === g ? ' sel' : ''}`;
+    b.textContent = ['CNOT', 'SWAP', 'CP', 'CCX'].includes(g) ? g : GATES[g].label;
     b.setAttribute('aria-pressed', ui.selected === g);
     b.title = `${GATES[g].name}: ${GATES[g].desc}`;
     b.addEventListener('click', () => selectGate(g));
@@ -378,7 +397,9 @@ function renderStory() {
   const meta = document.createElement('p');
   meta.className = 'hint';
   meta.textContent = lv.oracle
-    ? `Gizli kutu ${lv.oracle.col + 1}. sütunda kilitli · ideal: ${lv.par} kapı`
+    ? `${lv.oracle.boxes
+      ? `Gizli kutular ${lv.oracle.boxes.map((b) => `${b.col + 1}.`).join(' ve ')} sütunlarda kilitli`
+      : `Gizli kutu ${lv.oracle.col + 1}. sütunda kilitli`} · ideal: ${lv.par} kapı`
     : `Hedef: ${formatState(ui.target)} · ideal: ${lv.par} kapı`;
   const det = document.createElement('details');
   det.innerHTML = '<summary>İpucu</summary>';
@@ -414,6 +435,8 @@ function renderHelp(st) {
     <p>Serbest Laboratuvar'da gerçek donanımın kusurlarını açabilirsin. Simülatör o zaman durum vektörü yerine <b>yoğunluk matrisi</b> ρ ile çalışır ve her kapıdan sonra seçtiğin kanalı uygular: <i>depolarize</i> (rastgele Pauli hataları), <i>genlik sönümü</i> (T1: enerji kaybı) ya da <i>faz bozulması</i> (T2: faz bilgisinin kaybı). Saflık tr(ρ²) 1'den düştükçe durum "klasikleşir". Bugünkü kuantum bilgisayarların hata düzeltmeye neden bu kadar ihtiyaç duyduğunu burada görebilirsin.</p>
     <h3>Meydan okuma</h3>
     <p>Laboratuvarda bir durum kur ve <b>🎯 Meydan oku</b> düğmesine bas. Kopyalanan bağlantıyı açan kişi hedef durumu görür ama devreyi görmez; aynı kapılarla aynı durumu kurmaya çalışır.</p>
+    <h3>Toffoli ve hata düzeltme</h3>
+    <p>Toffoli (CCX) kapısı iki kontrol kübiti de |1⟩ iken hedefi çevirir; kuantum bir VE kapısıdır. <i>Bit-Çevirme Kodu</i> bölümünde bunu çoğunluk oyu için kullanırsın: bir kübitin bilgisi üç kübite yayılır, biri bozulsa bile diğer ikisi onu düzeltir. Gerçek kuantum bilgisayarlar bu fikrin çok daha büyük sürümlerine (yüzey kodları) dayanır.</p>
     <h3>Gizli kutular</h3>
     <p>Algoritmalar kısmında içini göremediğin kilitli kutular var. <b>Kehanet</b> (İng. <i>oracle</i>) kutuları gizli bir fonksiyonu saklar: Deutsch, Bernstein–Vazirani ve Grover algoritmaları onu klasik bir bilgisayardan daha az sorgulayarak çözer. <b>Mesaj</b> ve <b>ψ</b> kutuları ise sana bilinmeyen bir mesaj ya da durum verir. Her durumda devren kutunun tüm olası hallerinde doğru çalışmalı. Sağdaki listeden bir hal seçip devreni onunla izleyebilirsin.</p>
     <h3>OpenQASM ve gerçek donanım</h3>
@@ -603,7 +626,7 @@ function writeHash() {
   history.replaceState(null, '', `#lab=${ui.sandboxN}~${code}`);
 }
 function encodeOps(ops) {
-  return ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}.${o.col}${o.theta != null ? '@' + +o.theta.toPrecision(12) : ''}`).join('_');
+  return ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}${o.q3 != null ? '-' + o.q3 : ''}.${o.col}${o.theta != null ? '@' + +o.theta.toPrecision(12) : ''}`).join('_');
 }
 
 function readHash() {
@@ -620,14 +643,16 @@ function parseOps(n, code) {
   const saved = ui.ops;
   ui.ops = [];
   for (const part of code.split('_').filter(Boolean)) {
-    const pm = part.match(/^([A-Z]+)\.(\d)(?:-(\d))?\.(\d{1,2})(?:@(-?[\d.]+(?:e-?\d+)?))?$/);
+    const pm = part.match(/^([A-Z]+)\.(\d)(?:-(\d))?(?:-(\d))?\.(\d{1,2})(?:@(-?[\d.]+(?:e-?\d+)?))?$/);
     if (!pm || !GATES[pm[1]]) continue;
-    if (!!GATES[pm[1]].param !== (pm[5] != null)) continue;
-    const op = { g: pm[1], q: +pm[2], col: +pm[4] };
-    if (pm[5] != null) op.theta = +pm[5];
+    if (!!GATES[pm[1]].param !== (pm[6] != null)) continue;
+    const op = { g: pm[1], q: +pm[2], col: +pm[5] };
+    if (pm[6] != null) op.theta = +pm[6];
     if (pm[3] != null) op.q2 = +pm[3];
-    const arityOk = (GATES[op.g].arity === 2) === (op.q2 != null);
-    if (!arityOk || op.q >= n || (op.q2 ?? 0) >= n || op.col >= LAB_COLS || op.q === op.q2) continue;
+    if (pm[4] != null) op.q3 = +pm[4];
+    const rows = opRows(op);
+    if (rows.length !== GATES[op.g].arity || new Set(rows).size !== rows.length) continue;
+    if (rows.some((r) => r >= n) || op.col >= LAB_COLS) continue;
     const [lo, hi] = span(op);
     let free = true;
     for (let r = lo; r <= hi; r++) if (occupant(op.col, r)) free = false;

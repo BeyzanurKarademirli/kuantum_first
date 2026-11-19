@@ -5,11 +5,11 @@
 import { sortOps, GATES, angleLabel } from './quantum.js';
 
 const TO_QASM = {
-  H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz', CP: 'cp',
+  H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz', CP: 'cp', CCX: 'ccx',
 };
 const FROM_QASM = Object.fromEntries(Object.entries(TO_QASM).map(([k, v]) => [v, k]));
 // sık görülen eş adlar
-Object.assign(FROM_QASM, { cnot: 'CNOT', CX: 'CNOT', cu1: 'CP', cphase: 'CP' });
+Object.assign(FROM_QASM, { cnot: 'CNOT', CX: 'CNOT', cu1: 'CP', cphase: 'CP', toffoli: 'CCX' });
 
 export function toQasm(n, ops, { version = 3, measure = true, comment } = {}) {
   const v3 = version === 3;
@@ -30,7 +30,7 @@ export function toQasm(n, ops, { version = 3, measure = true, comment } = {}) {
     }
     // qelib1.inc'te cp yok; eşdeğeri cu1
     const name2 = op.g === 'CP' && !v3 ? 'cu1' : name;
-    const args = op.q2 != null ? `q[${op.q}], q[${op.q2}]` : `q[${op.q}]`;
+    const args = [op.q, op.q2, op.q3].filter((x) => x != null).map((x) => `q[${x}]`).join(', ');
     const param = GATES[op.g].param ? `(${angleLabel(op.theta, { ascii: true })})` : '';
     lines.push(`${name2}${param} ${args};`);
   }
@@ -56,27 +56,29 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
       continue;
     }
     if (/^(bit|creg)\b/.test(st) || /\bmeasure\b/.test(st) || /^barrier\b/.test(st)) continue;
-    m = st.match(/^(\w+)\s*(?:\(([^)]*)\))?\s+(\w+)\s*\[\s*(\d+)\s*\](?:\s*,\s*(\w+)\s*\[\s*(\d+)\s*\])?$/);
+    m = st.match(/^(\w+)\s*(?:\(([^)]*)\))?\s+(\w+\s*\[\s*\d+\s*\](?:\s*,\s*\w+\s*\[\s*\d+\s*\])*)$/);
     if (!m) throw new Error(`Anlaşılamayan satır: "${st}"`);
     const g = FROM_QASM[m[1]];
     if (!g) throw new Error(`Desteklenmeyen kapı: ${m[1]} (desteklenen: ${Object.values(TO_QASM).join(', ')})`);
     const isParam = !!GATES[g].param;
     if (isParam !== (m[2] != null)) throw new Error(isParam ? `${m[1]} kapısı bir açı ister: ${m[1]}(pi/4) q[0];` : `${m[1]} kapısı açı almaz.`);
     const theta = isParam ? evalAngle(m[2]) : null;
-    m = [m[0], m[1], m[3], m[4], m[5], m[6]];
-    if (m[2] !== reg || (m[4] && m[4] !== reg)) throw new Error(`Bilinmeyen yazmaç: ${m[2]}`);
-    const two = GATES[g].arity === 2;
-    if (two !== (m[4] != null)) throw new Error(`${m[1]} kapısına yanlış sayıda kübit verildi.`);
-    gates.push({ g, q: +m[3], ...(two ? { q2: +m[5] } : {}), ...(isParam ? { theta } : {}) });
+    const args = m[3].split(',').map((a) => a.trim().match(/^(\w+)\s*\[\s*(\d+)\s*\]$/));
+    for (const a of args) if (a[1] !== reg) throw new Error(`Bilinmeyen yazmaç: ${a[1]}`);
+    if (args.length !== GATES[g].arity) throw new Error(`${m[1]} kapısına yanlış sayıda kübit verildi.`);
+    const [q, q2, q3] = args.map((a) => +a[2]);
+    gates.push({
+      g, q, ...(q2 != null ? { q2 } : {}), ...(q3 != null ? { q3 } : {}), ...(isParam ? { theta } : {}),
+    });
   }
   if (n == null) throw new Error('Kübit tanımı bulunamadı (qubit[n] q; ya da qreg q[n];).');
   if (n < 1 || n > maxQubits) throw new Error(`En fazla ${maxQubits} kübit destekleniyor (${n} istendi).`);
   const ops = [];
   const nextFree = new Array(n).fill(0);
   for (const op of gates) {
-    const rows = op.q2 != null ? [op.q, op.q2] : [op.q];
+    const rows = [op.q, op.q2, op.q3].filter((x) => x != null);
     if (rows.some((r) => r >= n)) throw new Error(`Kübit indeksi aralık dışında: q[${Math.max(...rows)}]`);
-    if (op.q2 === op.q) throw new Error('İki kübitli kapının kübitleri farklı olmalı.');
+    if (new Set(rows).size !== rows.length) throw new Error('Çok kübitli bir kapının kübitleri farklı olmalı.');
     // aradaki kablolar da çizimde kapandığı için onları da işgal et
     const lo = Math.min(...rows), hi = Math.max(...rows);
     let col = 0;

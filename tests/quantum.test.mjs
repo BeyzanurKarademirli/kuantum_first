@@ -77,7 +77,12 @@ for (const lv of LEVELS) {
       assert.ok(placementAllowed(lv, op), `${op.g} q${op.q} yerleşimi izinli`);
       if (GATES[op.g].param) assert.ok(Number.isFinite(op.theta), 'açı var');
       assert.ok(op.col < 8, 'sütun sınırı');
-      if (lv.oracle) assert.notEqual(op.col, lv.oracle.col, 'kehanet sütunu dolu');
+      for (const box of lockedOps(lv)) {
+        if (op.col !== box.col) continue;
+        const rows = [op.q, op.q2, op.q3].filter((x) => x != null);
+        const lo = Math.min(...rows), hi = Math.max(...rows);
+        assert.ok(hi < box.q || lo > box.q2, 'kutunun hücreleri dolu');
+      }
     }
     const r = evaluateLevel(lv, ops);
     assert.ok(r.solved, JSON.stringify(r.checks));
@@ -116,6 +121,23 @@ test('açı etiketleri', () => {
   assert.equal(angleLabel(Math.PI), 'π');
   assert.equal(angleLabel(3 * Math.PI / 4, { ascii: true }), '3*pi/4');
   assert.equal(angleLabel(0.3, { ascii: true }), '0.3');
+});
+
+test('Toffoli: yalnızca iki kontrol de 1 iken çevirir', () => {
+  for (let m = 0; m < 8; m++) {
+    const prep = [0, 1, 2].filter((q) => (m >> (2 - q)) & 1).map((q) => ({ g: 'X', q, col: 0 }));
+    const s = runCircuit(3, [...prep, { g: 'CCX', q: 0, q2: 1, q3: 2, col: 1 }]);
+    const expect = m >= 6 ? m ^ 1 : m;
+    close(probabilities(s)[expect], 1);
+  }
+});
+
+test('bit-çevirme kodu: kodlama olmadan q0 hatası düzeltilemez', () => {
+  const lv = LEVELS.find((l) => l.id === 'bit-cevirme-kodu');
+  const r = evaluateLevel(lv, lockedOps(lv));
+  // her ψ için 'hata yok', 'q1' ve 'q2' kendiliğinden doğru; q0 hatası düzeltilmeden kalır
+  assert.equal(r.checks.filter((c) => c.ok).length, 6);
+  assert.ok(r.checks.filter((c) => !c.ok).every((c) => c.name.includes('q0')));
 });
 
 test('bölüm kimlikleri benzersiz', () => {

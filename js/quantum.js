@@ -27,6 +27,7 @@ export const GATES = {
   SWAP: { arity: 2, label: '×', name: 'SWAP', desc: 'İki kübitin durumlarını takas eder.' },
   RX: { arity: 1, param: true, label: 'Rx', name: 'Rx(θ)', desc: 'Bloch küresinde X ekseni etrafında θ kadar döndürür. Açıyı yandaki listeden seç.' },
   RY: { arity: 1, param: true, label: 'Ry', name: 'Ry(θ)', desc: 'Y ekseni etrafında θ kadar döndürür. Genlikler gerçek kalır; olasılığı istediğin oranda ayarlamanın yolu.' },
+  CCX: { arity: 3, label: '⊕', name: 'Toffoli (CCX)', desc: 'İki kontrol kübiti de |1⟩ ise hedefi çevirir: kuantum bir VE kapısı. Önce iki kontrolü, sonra aynı sütunda hedefi seç.' },
   CP: { arity: 2, param: true, label: 'P', name: 'Kontrollü faz CP(θ)', desc: 'İki kübit de |1⟩ ise e^{iθ} fazı ekler. Simetriktir; CP(π) = CZ. Kuantum Fourier dönüşümünün yapı taşı.' },
   RZ: { arity: 1, param: true, label: 'Rz', name: 'Rz(θ)', desc: 'Z ekseni etrafında θ kadar döndürür: yalnızca göreli fazı değiştirir.' },
 };
@@ -129,6 +130,10 @@ export function applyOp(s, op) {
     case 'CNOT': return applyMatrix(s, op.q2, MATRICES.X, bitOf(s.n, op.q));
     case 'CZ': return applyMatrix(s, op.q2, MATRICES.Z, bitOf(s.n, op.q));
     case 'SWAP': return applySwap(s, op.q, op.q2);
+    case 'CCX': {
+      if (new Set([op.q, op.q2, op.q3]).size !== 3) throw new Error('Toffoli üç farklı kübit ister');
+      return applyMatrix(s, op.q3, MATRICES.X, bitOf(s.n, op.q) | bitOf(s.n, op.q2));
+    }
     case 'CP': {
       if (typeof op.theta !== 'number' || !Number.isFinite(op.theta)) throw new Error('CP için açı gerekli');
       return applyMatrix(s, op.q2, [[1, 0], [0, 0], [0, 0], [Math.cos(op.theta), Math.sin(op.theta)]], bitOf(s.n, op.q));

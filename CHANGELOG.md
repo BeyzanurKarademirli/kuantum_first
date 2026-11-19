@@ -1,5 +1,12 @@
 # Değişiklik günlüğü
 
+## 0.5.0 — 2026-11-19
+- Toffoli (CCX) kapısı: üç tıklamayla yerleşim (iki kontrol, bir hedef), QASM `ccx`, gürültü desteği.
+- Yeni "Hata Düzeltme" kısmı: Bit-Çevirme Kodu (2 bilinmeyen durum × 4 hata senaryosu). Toplam 26 bölüm.
+- Gizli kutu altyapısı aynı bölümde birden fazla kutuyu destekliyor (hazırlık + hata kutusu).
+- QASM ayrıştırıcı keyfi sayıda kübit argümanı alıyor; paylaşım bağlantıları üç kübitli kapıları taşıyor.
+- Qiskit doğrulaması Toffoli içeren devreleri kapsıyor (246/246).
+
 ## 0.4.0 — 2026-11-19
 - Kontrollü faz kapısı CP(θ) (QASM 3'te `cp`, QASM 2'de `cu1`).
 - Yeni "Fourier" kısmı: Fourier Saati (QFT) ve Faz Kestirimi (4 gizli faz). Toplam 25 bölüm.

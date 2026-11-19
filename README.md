@@ -8,13 +8,15 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 ## Neler var?
 
-- **5 kısımda 25 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*, *Fourier*. Tek bit çevirmekten
+- **6 kısımda 26 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*, *Fourier*, *Hata Düzeltme*. Tek bit çevirmekten
   Bell çiftine, GHZ üçlüsüne, singlet durumuna ve "X kapısı sadece üst kübite takılabiliyor" gibi
   kısıtlı bulmacalara kadar. Her bölüm ideal kapı sayısına göre ★ ile puanlanır.
 - **Gerçek algoritmalar ve protokoller** — *Deutsch*, *Bernstein–Vazirani*, *Grover*,
-  *süper yoğun kodlama*, *kuantum ışınlanma*, *kuantum Fourier dönüşümü* ve *faz kestirimi*. İçi görünmeyen kilitli kutular (kehanet, mesaj,
+  *süper yoğun kodlama*, *kuantum ışınlanma*, *kuantum Fourier dönüşümü*, *faz kestirimi* ve
+  *3 kübitlik bit-çevirme kodu* (kuantum hata düzeltme). İçi görünmeyen kilitli kutular (kehanet, mesaj,
   bilinmeyen durum) var; devren kutunun her olası halinde doğru çalışmalı.
-- **13 kapı** — H, X, Y, Z, S, T, CNOT, CZ, SWAP, kontrollü faz CP(θ) ve açılı döndürmeler Rx(θ), Ry(θ), Rz(θ).
+- **14 kapı** — H, X, Y, Z, S, T, CNOT, CZ, SWAP, Toffoli (CCX), kontrollü faz CP(θ) ve açılı döndürmeler
+  Rx(θ), Ry(θ), Rz(θ).
 - **Gürültü modu** — yoğunluk matrisi simülatörü; depolarize, genlik sönümü (T1) ve faz bozulması (T2)
   kanalları. Bloch oklarının dekoheransla küçülüşünü, saflığın düşüşünü ve hatalı ölçümleri gör.
 - **Meydan okuma bağlantıları** — laboratuvarda kurduğun durumu bulmaca olarak arkadaşına gönder.
@@ -51,7 +53,7 @@ npm test
 **Qiskit çapraz doğrulaması:** Her push'ta CI, bütün bölüm çözümlerini (kehanet varyantları dahil) ve
 60 tohumlu rastgele devreyi OpenQASM 2 ve 3 olarak IBM Qiskit'e yükler; Qiskit'in durum vektörünü
 Dolanık'ınkiyle karşılaştırır. Gürültülü devrelerde Qiskit `DensityMatrix` + `Kraus` kanallarıyla
-yoğunluk matrisi eleman eleman karşılaştırılır (230/230 birebir uyum). Yerelde:
+yoğunluk matrisi eleman eleman karşılaştırılır (246/246 birebir uyum). Yerelde:
 
 ```bash
 pip install -r tests/qiskit/requirements.txt
@@ -98,7 +100,8 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 - [x] Qiskit ile otomatik çapraz doğrulama
 - [x] Bernstein–Vazirani, kuantum ışınlanma, süper yoğun kodlama
 - [x] Kuantum Fourier dönüşümü ve faz kestirimi
-- [ ] Kuantum hata düzeltme (3 kübitlik bit-çevirme kodu, gürültüyle birlikte)
+- [x] Kuantum hata düzeltme: 3 kübitlik bit-çevirme kodu (Toffoli ile çoğunluk oyu)
+- [ ] Faz-çevirme kodu ve gürültü modunda kodlu/kodsuz karşılaştırma
 - [ ] Orta-devre ölçümü ve klasik kontrol
 - [x] Gürültü modu: dekoherans kürenin içine nasıl çeker?
 - [ ] İngilizce dil seçeneği

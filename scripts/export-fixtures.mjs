@@ -42,7 +42,10 @@ for (let k = 0; k < 60; k++) {
   const len = 5 + Math.floor(rnd() * 25);
   const ops = [];
   for (let c = 0; c < len; c++) {
-    if (n > 1 && rnd() < 0.35) {
+    if (n > 2 && rnd() < 0.1) {
+      const [a, b, c2] = [0, 1, 2, 3].slice(0, n).sort(() => rnd() - 0.5);
+      ops.push({ g: 'CCX', q: a, q2: b, q3: c2, col: c });
+    } else if (n > 1 && rnd() < 0.35) {
       const q = Math.floor(rnd() * n);
       let q2 = Math.floor(rnd() * (n - 1));
       if (q2 >= q) q2++;

@@ -1,5 +1,5 @@
 // Her bölüm için örnek bir ideal çözüm. Testler ve Qiskit doğrulaması kullanır.
-// Biçim: [kapı, kübit, ikinci kübit?, sütun?, açı?]. Sütun verilmezse sırayla 0, 1, 2…
+// Biçim: [kapı, kübit, ikinci kübit?, sütun?, açı?, üçüncü kübit?]. Sütun verilmezse sırayla 0, 1, 2…
 export const SOLUTIONS = {
   'bit-cevir': [['X', 0]],
   superpozisyon: [['H', 0]],
@@ -48,10 +48,15 @@ export const SOLUTIONS = {
     ['X', 2, null, 0], ['H', 0, null, 0], ['H', 1, null, 0],
     ['SWAP', 0, 1, 3], ['H', 1, null, 4], ['CP', 0, 1, 5, -Math.PI / 2], ['H', 0, null, 6],
   ],
+  // ψ kutusu sütun 0 (q0), hata kutusu sütun 3 (tüm kübitler)
+  'bit-cevirme-kodu': [
+    ['CNOT', 0, 1, 1], ['CNOT', 0, 2, 2],
+    ['CNOT', 0, 1, 4], ['CNOT', 0, 2, 5], ['CCX', 1, 2, 6, null, 0],
+  ],
 };
 
 export function solutionOps(id) {
-  return SOLUTIONS[id].map(([g, q, q2, col, theta], i) => ({
-    g, q, ...(q2 != null ? { q2 } : {}), col: col ?? i, ...(theta != null ? { theta } : {}),
+  return SOLUTIONS[id].map(([g, q, q2, col, theta, q3], i) => ({
+    g, q, ...(q2 != null ? { q2 } : {}), ...(q3 != null ? { q3 } : {}), col: col ?? i, ...(theta != null ? { theta } : {}),
   }));
 }

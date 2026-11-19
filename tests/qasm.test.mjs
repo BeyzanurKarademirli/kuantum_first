@@ -68,9 +68,20 @@ test('açı ifadeleri güvenle hesaplanır', () => {
   assert.throws(() => fromQasm('qubit[1] q; h(0.1) q[0];'), /açı almaz/);
 });
 
+test('Toffoli (ccx) dışa/içe aktarılır', () => {
+  const ops = [{ g: 'H', q: 0, col: 0 }, { g: 'X', q: 2, col: 0 }, { g: 'CCX', q: 0, q2: 2, q3: 1, col: 1 }];
+  for (const version of [2, 3]) {
+    const text = toQasm(3, ops, { version });
+    assert.match(text, /ccx q\[0\], q\[2\], q\[1\];/);
+    const back = fromQasm(text);
+    assert.deepEqual(back.ops[2], { g: 'CCX', q: 0, q2: 2, q3: 1, col: 1 });
+  }
+  assert.throws(() => fromQasm('qubit[3] q; ccx q[0], q[0], q[1];'), /farklı olmalı/);
+});
+
 test('anlaşılır hata mesajları', () => {
   assert.throws(() => fromQasm('qubit[2] q; u3(0.1, 0.2, 0.3) q[0];'), /Desteklenmeyen/);
-  assert.throws(() => fromQasm('qubit[2] q; ccx q[0], q[1];'), /yanlış sayıda|Desteklenmeyen/);
+  assert.throws(() => fromQasm('qubit[2] q; ccx q[0], q[1];'), /yanlış sayıda/);
   assert.throws(() => fromQasm('qubit[9] q;'), /En fazla 4/);
   assert.throws(() => fromQasm('h q[0];'), /Kübit tanımı/);
   assert.throws(() => fromQasm('qubit[2] q; x q[5];'), /aralık dışında/);

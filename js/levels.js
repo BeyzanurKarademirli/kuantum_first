@@ -185,6 +185,21 @@ const RAW = [
     hint: 'Önce q2\'yi |1⟩ yap ve sayaç kübitlerini süperpozisyona sok. Kutudan sonra ters QFT: SWAP, H q1, CP(−π/2), H q0.',
     n: 3, gates: ['H', 'X', 'CP', 'SWAP'], oracle: { kind: 'qpe', col: 2 }, par: 7,
   },
+  {
+    id: 'bit-cevirme-kodu',
+    title: 'Bit-Çevirme Kodu',
+    story: 'Kuantum hata düzeltmenin ilk adımı. ψ kutusu q0\'a bilinmeyen bir durum koyuyor; ardından "?" kutusundaki gürültü kübitlerden en fazla birini rastgele çeviriyor (ya da hiçbirini). Kuantum bilgisi kopyalanamaz (kopyalanamazlık teoremi), ama dolanıklıkla üç kübite yayılabilir. Durumu q1 ve q2\'ye "yay", hatadan sonra çoğunluk oyu ile düzelt: sonunda q0 yine ψ olmalı.',
+    hint: 'Kodla: iki CNOT ile α|0⟩+β|1⟩ → α|000⟩+β|111⟩. Çöz: aynı iki CNOT; q1 ve q2 artık hatanın nerede olduğunu söyler (sendrom). İkisi de 1 ise q0 çevrilmiştir: Toffoli ile düzelt.',
+    n: 3, gates: ['CNOT', 'CCX', 'X', 'H'],
+    oracle: {
+      kind: 'bitflip',
+      boxes: [
+        { part: 'prep', col: 0, rows: [0, 0], label: 'ψ' },
+        { part: 'err', col: 3, rows: [0, 2], label: '?' },
+      ],
+    },
+    par: 5,
+  },
 ];
 
 const CHAPTERS = [
@@ -193,6 +208,7 @@ const CHAPTERS = [
   ['Döndürmeler', ['ceyrek-sans', 'altida-bir', 'yarim-dolanik']],
   ['Algoritmalar', ['deutsch', 'bernstein-vazirani', 'grover', 'super-yogun', 'isinlanma']],
   ['Fourier', ['fourier-saati', 'faz-kestirimi']],
+  ['Hata Düzeltme', ['bit-cevirme-kodu']],
 ];
 
 const byId = Object.fromEntries(RAW.map((l) => [l.id, l]));
