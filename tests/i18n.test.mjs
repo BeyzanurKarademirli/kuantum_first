@@ -18,7 +18,8 @@ test('her bölümün İngilizce başlık, hikâye ve ipucu var', () => {
   for (const lv of LEVELS) {
     const en = LEVELS_EN[lv.id];
     assert.ok(en, lv.id);
-    for (const f of ['title', 'story', 'hint']) assert.ok(en[f]?.length > 3, `${lv.id}.${f}`);
+    for (const f of ['title', 'story', 'hint', 'lesson']) assert.ok(en[f]?.length > 3, `${lv.id}.${f}`);
+    assert.ok(lv.lesson?.length > 10, `${lv.id} Türkçe kural`);
     assert.ok(STRINGS.en[`chapter.${lv.chapter}`], `kısım ${lv.chapter}`);
   }
   assert.deepEqual(Object.keys(LEVELS_EN).sort(), LEVELS.map((l) => l.id).sort());

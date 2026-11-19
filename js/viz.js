@@ -16,18 +16,22 @@ function setupCanvas(cv) {
   const ctx = cv.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
+  // gizli tuval (ör. "Nasıl okunur?" açıkken): çizecek alan yok
+  if (w < 4 || h < 4) return null;
   return { ctx, w, h };
 }
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 export function drawAmplitudes(cv, s, opts = {}) {
-  const { ctx, w, h } = setupCanvas(cv);
+  const c = setupCanvas(cv);
+  if (!c) return;
+  const { ctx, w, h } = c;
   const N = s.re.length;
   const cols = N <= 4 ? N : N <= 8 ? 4 : 8;
   const rows = Math.ceil(N / cols);
   const cw = w / cols, ch = h / rows;
-  const R = Math.min(cw, ch - 18) * 0.4;
+  const R = Math.max(1, Math.min(cw, ch - 18) * 0.4);
   const ink = css('--ink'), dim = css('--ink-3'), line = css('--line-2'), card = css('--card');
   ctx.font = `500 ${Math.max(10, Math.min(12.5, cw / 5.5))}px "JetBrains Mono", ui-monospace, monospace`;
   ctx.textAlign = 'center';
@@ -76,7 +80,9 @@ function project(x, y, z, cx, cy, R) {
 }
 
 export function drawBloch(cv, v) {
-  const { ctx, w, h } = setupCanvas(cv);
+  const c = setupCanvas(cv);
+  if (!c) return;
+  const { ctx, w, h } = c;
   const cx = w / 2, cy = h / 2 + 2, R = Math.min(w, h) * 0.36;
   const ink = css('--ink'), dim = css('--ink-3'), line = css('--line-2'), paper2 = css('--paper-2');
   // küre gövdesi: hafif gölgeli

@@ -583,3 +583,14 @@ body.touring .trail { display: none; }
   .welcome { padding: 20px 18px 16px; }
   .welcome h2 { font-size: 26px; }
 }
+
+/* zorluk etiketi ve "öğrendiğin kural" kartı */
+.levels h4 .diff { font: 600 9px/1 var(--font-mono); letter-spacing: 1px; text-transform: uppercase; font-style: normal;
+  padding: 3px 6px; border-radius: 6px 2px 6px 2px; border: 1px solid currentColor; opacity: .8; flex: none; }
+.levels h4 .diff[data-d="kolay"] { color: var(--jade); }
+.levels h4 .diff[data-d="orta"] { color: var(--saffron); }
+.levels h4 .diff[data-d="ileri"] { color: var(--rose); }
+.lesson { margin: 14px 0 4px; padding: 12px 14px; text-align: left; border: 1.5px dashed var(--line-2); border-radius: 14px 4px 14px 4px; background: var(--paper); }
+.lesson-k { display: block; font: 600 10px/1 var(--font-mono); letter-spacing: 2px; text-transform: uppercase; color: var(--jade); margin-bottom: 6px; }
+.lesson p { margin: 0; color: var(--ink); font-size: 14.5px; line-height: 1.5; }
+@media (max-width: 760px) { .levels h4 .diff { display: none; } }

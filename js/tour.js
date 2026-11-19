@@ -26,6 +26,8 @@ export function createTour({ t, onStart, onEnd }) {
   const bubble = root.querySelector('.tour-bubble');
   const ghost = document.getElementById('ghost');
   let i = 0, running = false, token = 0;
+  // hangi adımların işi (tıklamaları) yapıldı: her iş yalnızca bir kez
+  const done = new Set();
 
   const ghostAPI = {
     async moveTo(sel) {
@@ -46,6 +48,16 @@ export function createTour({ t, onStart, onEnd }) {
       await wait(420);
     },
     async hover(sel) { await ghostAPI.moveTo(sel); },
+  };
+  // atlanan adımların işlerini imleç animasyonu olmadan, hemen yapan sürüm
+  const instantAPI = {
+    async click(sel) {
+      const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+      el?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      await new Promise((r) => setTimeout(r, 30));
+    },
+    async hover() {},
+    async moveTo() {},
   };
 
   const place = (el) => {
@@ -96,6 +108,10 @@ export function createTour({ t, onStart, onEnd }) {
     i = Math.max(0, Math.min(STEPS.length - 1, k));
     const s = STEPS[i];
     render();
+    // atlanan önceki adımların işlerini sırayla tamamla (anlatım devredeki duruma uysun)
+    for (let j = 0; j < i; j++) {
+      if (STEPS[j].act && !done.has(j)) { done.add(j); await STEPS[j].act(instantAPI); }
+    }
     bubble.classList.remove('in'); void bubble.offsetWidth; bubble.classList.add('in');
     const el = document.querySelector(s.target);
     if (el) {
@@ -104,7 +120,8 @@ export function createTour({ t, onStart, onEnd }) {
     }
     if (my !== token) return;
     place(el);
-    if (s.act) {
+    if (s.act && !done.has(i)) {
+      done.add(i);
       bubble.classList.add('busy');
       await s.act(ghostAPI);
       bubble.classList.remove('busy');
@@ -138,6 +155,7 @@ export function createTour({ t, onStart, onEnd }) {
 
   function start() {
     running = true;
+    done.clear();
     document.body.classList.add('touring');
     onStart?.();
     root.hidden = false;

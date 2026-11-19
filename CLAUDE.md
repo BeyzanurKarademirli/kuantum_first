@@ -20,7 +20,8 @@ dil tarayıcıdan algılanır.
   yeşim, gül); yaprak köşeler, baskı gölgeleri. Süs olarak gökkuşağı geçişi kullanma: çok renk yalnızca
   fazı gösteren veride (genlik çemberleri, faz tekerleği) olur. Her bölüm başlığında bir "?" açıklaması bulunur. Yeni yazı tipi eklenecekse `fonts/` altına gömülür,
   dış kaynaktan yüklenmez. Yayın iş akışı `fonts/` klasörünü de kopyalar.
-- Her yeni bölüm için `tests/solutions.mjs` içine ideal kapı sayısında (`par`) bir çözüm ekle.
+- Her yeni bölüm için `tests/solutions.mjs` içine ideal kapı sayısında (`par`) bir çözüm, `levels.js` ve
+  `levels-en.js` içine bir `lesson` (öğrendiğin kural) ekle.
   Testler, her bölümün 3 yıldızla çözülebildiğini doğrular.
 - Fiziksel doğruluk pazarlıksız: yeni kapı veya özellik eklerken Qiskit fixture'larının da
   kapsamasını sağla (`scripts/export-fixtures.mjs`).
@@ -36,8 +37,12 @@ npm test
 ```bash
 node scripts/export-fixtures.mjs > /tmp/fx.json && python tests/qiskit/verify.py /tmp/fx.json
 ```
-Arayüz değişikliklerinde Playwright ile masaüstü (1440px) ve mobil (390px) ekran görüntüsü alıp
-konsol hatası olmadığını kontrol et.
+```bash
+npm run test:e2e
+```
+Tarayıcı testleri `tests/e2e/` altında (CI'da da çalışır, geçmezse yayın olmaz). Yeni bir kullanıcı akışı
+eklediğinde oraya bir senaryo ekle. Arayüz değişikliklerinde ayrıca Playwright ile masaüstü (1440px) ve
+mobil (390px) ekran görüntüsü alıp gözle kontrol et.
 
 ## İş akışı
 - `main` dalına push → CI (Node testleri + Qiskit) → GitHub Pages yayını.

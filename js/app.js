@@ -2,7 +2,7 @@ import {
   GATES, ANGLES, angleLabel, runCircuit, zeroState, cloneState, stateFromAmplitudes, blochVector,
   entanglementEntropy, entropyFromBloch, measureShots, sample, formatState, ketLabel,
 } from './quantum.js';
-import { LEVELS } from './levels.js';
+import { LEVELS, DIFFICULTY } from './levels.js';
 import { drawAmplitudes, drawBloch, lerpState } from './viz.js';
 import { playState, click } from './audio.js';
 import {
@@ -454,8 +454,11 @@ function renderSide() {
         const inCh = LEVELS.filter((l) => l.chapter === lv.chapter);
         const got = inCh.reduce((a, l) => a + (ui.progress[l.id] || 0), 0);
         const h = document.createElement('h4');
-        h.innerHTML = '<span></span><span class="chbar"><i></i></span>';
+        h.innerHTML = '<span></span><span class="diff"></span><span class="chbar"><i></i></span>';
         h.firstChild.textContent = chapterName(lv.chapter);
+        const d = DIFFICULTY[lv.chapter];
+        h.querySelector('.diff').textContent = t(`diff.${d}`);
+        h.querySelector('.diff').dataset.d = d;
         h.querySelector('i').style.width = `${(got / (inCh.length * 3)) * 100}%`;
         list.appendChild(h);
       }
@@ -535,7 +538,7 @@ function renderStory() {
   const lv = level();
   const chap = document.createElement('p');
   chap.className = 'chapter';
-  chap.textContent = ui.custom ? '◎' : `${chapterName(lv.chapter)} · ${ui.levelIdx + 1}/${LEVELS.length}`;
+  chap.textContent = ui.custom ? '◎' : `${chapterName(lv.chapter)} · ${t(`diff.${DIFFICULTY[lv.chapter]}`)} · ${ui.levelIdx + 1}/${LEVELS.length}`;
   st.dataset.num = ui.custom ? '◎' : ui.levelIdx + 1;
   h.textContent = lvText(lv, 'title');
   setRich(p, lvText(lv, 'story'));
@@ -688,6 +691,9 @@ function win() {
   $('winTitle').textContent = ui.custom ? t('win.challenge') : ui.levelIdx === LEVELS.length - 1 ? t('win.allDone') : t('win.title');
   $('winText').textContent = t('win.text', { k: used, par: lv.par, extra: stars < 3 ? t('win.retry') : t('win.perfect') });
   $('next').hidden = !!ui.custom || ui.levelIdx >= LEVELS.length - 1;
+  const lesson = ui.custom ? '' : lvText(lv, 'lesson');
+  $('winLessonBox').hidden = !lesson;
+  if (lesson) setRich($('winLesson'), lesson);
   $('win').hidden = false;
   burst($('burst'));
   playState(runCircuit(lv.n, playableOps()), 2.4);

@@ -1,5 +1,17 @@
 # Değişiklik günlüğü
 
+## 0.10.0 — 2026-11-19
+- Tarayıcı testleri (E2E) depoya ve CI'a eklendi: 15 kullanıcı senaryosu gerçek Chromium'da çalışır;
+  geçmezse site yayına çıkmaz. Bağımlılık eklenmedi (yerleşik http sunucusu, CI'da Playwright).
+- "Öğrendiğin kural" kartı: 26 bölümün her biri çözülünce öğrettiği fikri iki dilde özetler.
+- Kısımlarda zorluk etiketleri: Başlangıç / Orta / İleri.
+- Karşılama mesajı: "Kuantum bilgisayarını kod yazmadan öğren. Devreyi kur. Sonucu gör. Mantığı keşfet."
+  Simülasyon olduğu açıkça belirtiliyor.
+- E2E testlerinin bulduğu hatalar düzeltildi:
+  - Turda hızlı geçilince ya da noktayla atlanınca hayalet imlecin işi yapılmıyor, anlatım devreyle
+    uyuşmuyordu; atlanan adımların işleri artık sırayla tamamlanıyor.
+  - "Nasıl okunur?" açıkken gizli tuvale negatif yarıçaplı çizim konsola hata yazıyordu.
+
 ## 0.9.2 — 2026-11-19
 - İmlecin kendi ışığı kaldırıldı: kartlarda imleci izleyen altın ışık lekesi ve arka plan ağındaki imleç parıltısı yok.
 

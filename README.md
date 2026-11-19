@@ -41,6 +41,8 @@ Renkli tek öğe genlik çemberleridir: oradaki renkler süs değil, fazı göst
 - **Gürültü modu** — yoğunluk matrisi simülatörü; depolarize, genlik sönümü (T1) ve faz bozulması (T2)
   kanalları. Bloch oklarının dekoheransla küçülüşünü, saflığın düşüşünü ve hatalı ölçümleri gör.
 - **Meydan okuma bağlantıları** — laboratuvarda kurduğun durumu bulmaca olarak arkadaşına gönder.
+- **Öğrendiğin kural** — her bölüm çözülünce o bölümün öğrettiği fikir tek cümleyle özetlenir.
+- **Zorluk etiketleri** — kısımlar Başlangıç / Orta / İleri olarak işaretli.
 - **İki dil** — Türkçe ve İngilizce; tarayıcı diline göre kendiliğinden seçilir, tek tıkla değişir.
 - **Açık ve koyu tema** — sistem tercihine uyar, elle de değiştirilebilir.
 - **OpenQASM 2.0 / 3.0** — devreni endüstri standardı dile aktar, IBM Quantum, Qiskit, Cirq ya da
@@ -71,6 +73,15 @@ Simülatör, QASM ayrıştırıcı ve her bölümün ideal kapı sayısıyla ç�
 
 ```bash
 npm test
+```
+
+**Tarayıcı testleri (E2E):** 15 senaryo gerçek bir Chromium'da, kullanıcı gibi tıklayarak çalışır:
+ilk ziyaret ve rehber tur, bölüm çözme ve yıldızlar, gizli kutular, kural kısıtları, laboratuvar, QASM
+içe/dışa aktarma, paylaşım ve meydan okuma bağlantıları, gürültü, dil ve tema, klavye, "?" açıklamaları,
+390px mobil ve 26 bölümün hepsinin hatasız açılması. Yerelde (Playwright kuruluysa):
+
+```bash
+npm run test:e2e
 ```
 
 **Qiskit çapraz doğrulaması:** Her push'ta CI, bütün bölüm çözümlerini (kehanet varyantları dahil) ve
@@ -109,7 +120,7 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
 | `js/audio.js` | Web Audio ile "süperpozisyonu dinle" |
 | `js/app.js` | Arayüz, devre düzenleyici, ilerleme, paylaşım |
-| `tests/` | `node --test` birim testleri, `tests/qiskit/` Qiskit doğrulaması |
+| `tests/` | `node --test` birim testleri, `tests/e2e/` tarayıcı testleri, `tests/qiskit/` Qiskit doğrulaması |
 | `scripts/` | Doğrulama verisi üretimi |
 
 Kural: kübit 0 ket gösteriminde en soldaki bittir (`|q0 q1 q2⟩`).

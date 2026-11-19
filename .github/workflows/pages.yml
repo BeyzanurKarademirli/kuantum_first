@@ -42,10 +42,22 @@ jobs:
       - run: node scripts/export-fixtures.mjs > fixtures.json
       - run: python tests/qiskit/verify.py fixtures.json
 
+  e2e:
+    name: Tarayıcı testleri (E2E)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-package-lock playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+
   deploy:
     # Ücretsiz planda Pages yalnızca açık depolarda çalışır; depo açılınca kendiliğinden yayınlanır.
     if: github.event_name != 'pull_request' && !github.event.repository.private
-    needs: [test, qiskit]
+    needs: [test, qiskit, e2e]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

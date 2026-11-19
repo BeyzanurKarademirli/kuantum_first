@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "test": "node --test",
-    "start": "python3 -m http.server 8000"
+    "start": "python3 -m http.server 8000",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.e2e.mjs"
   }
 }
