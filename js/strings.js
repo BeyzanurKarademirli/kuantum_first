@@ -8,7 +8,7 @@ const HELP_TR = `
 Dolu dairenin <b>boyutu</b> genliğin büyüklüğüdür; ölçünce o sonucu görme olasılığı bunun karesidir.
 <b>Renk ve ibre</b> fazı gösterir: sağ = +1, yukarı = +i, sol = −1, aşağı = −i.</p>
 <h3>Faz neden önemli?</h3>
-<p>Ölçüm fazı görmez, ama faz <b>girişimi</b> belirler. <i>Girişim</i> bölümünde H·Z·H dizisi fazı olasılığa çevirir: kuantum algoritmalarının çoğu bu numaraya dayanır. Arka plandaki akışkan desen de bir girişim deseni: iki dalga kaynağı, oyundaki aynı faz renkleriyle boyanmış.</p>
+<p>Ölçüm fazı görmez, ama faz <b>girişimi</b> belirler. <i>Girişim</i> bölümünde H·Z·H dizisi fazı olasılığa çevirir: kuantum algoritmalarının çoğu bu numaraya dayanır. Arka plandaki tel ağ da bir uzay-zaman ızgarası: imleç onu bir kütle gibi büker, tıklayınca ağda dalga yayılır.</p>
 <h3>Bloch küreleri</h3>
 <p>Her küre tek bir kübitin, diğerlerinden bağımsız bakıldığında nasıl göründüğünü çizer. Ok kürenin yüzeyindeyse kübit "kendi başına" tanımlıdır.
 Ok kısalıyorsa kübit başkalarıyla <b>dolanıktır</b>: bilgisi tek başına değil, ilişkide saklıdır. Bell çiftinde ok tamamen kaybolur.</p>
@@ -41,7 +41,7 @@ const HELP_EN = `
 The <b>size</b> of the filled disc is the amplitude's magnitude; the probability of measuring that outcome is its square.
 <b>Colour and needle</b> show the phase: right = +1, up = +i, left = −1, down = −i.</p>
 <h3>Why does phase matter?</h3>
-<p>Measurement can't see phase, but phase decides <b>interference</b>. In the <i>Interference</i> level the sequence H·Z·H turns phase into probability: most quantum algorithms rely on this trick. The flowing background is an interference pattern too: two wave sources, painted with the same phase colours as the game.</p>
+<p>Measurement can't see phase, but phase decides <b>interference</b>. In the <i>Interference</i> level the sequence H·Z·H turns phase into probability: most quantum algorithms rely on this trick. The wire mesh in the background is a spacetime grid: your cursor bends it like a mass, and a click sends a wave through it.</p>
 <h3>Bloch spheres</h3>
 <p>Each sphere shows one qubit as seen on its own. If the arrow touches the surface, the qubit is well-defined by itself.
 If the arrow shrinks, the qubit is <b>entangled</b> with others: its information lives in the relationship, not in the qubit. In a Bell pair the arrow vanishes completely.</p>
@@ -187,6 +187,17 @@ export const STRINGS = {
     'challenge.story': 'Bir arkadaşın {n} kübitle bu durumu kurdu ve sana meydan okuyor: aynısını kurabilir misin? Yalnızca onun kullandığı kapılar elinde. O, {k} kapı kullandı.',
     'challenge.hint': 'Hedefteki çemberlerin boyutuna (olasılık) ve rengine (faz) bak. Bloch oklarının kısalması dolanıklığı ele verir.',
     'foot': 'Açık kaynak · MIT lisansı · reklam yok, takip yok, hesap yok. İlerlemen yalnızca kendi tarayıcında saklanır.',
+    'info.levels': '<b>Bölümler</b>Her bölüm bir bulmaca: hedef kuantum durumunu kapılarla kur. Yanındaki üç yıldız ödülün: ideal kapı sayısıyla çözersen ✦✦✦, iki fazlasıyla ✦✦, daha fazlasıyla ✦. İlerlemen yalnızca kendi tarayıcında saklanır.',
+    'info.qubits': '<b>Kübit sayısı</b>Laboratuvarda kaç kübitle çalışacağını seç. Her yeni kübit olası durum sayısını ikiye katlar: 4 kübit = 16 genlik.',
+    'info.noise': '<b>Gürültü</b>Gerçek kuantum bilgisayarlar çevreyle etkileşip bilgi kaybeder. Bir gürültü türü ve şiddet seç: Bloch okları kısalır, ölçümde beklenmeyen sonuçlar çıkar. Hata düzeltmenin neden gerektiğini burada görürsün.',
+    'info.gates': '<b>Kapılar</b>Kapılar kübitleri döndüren işlemlerdir. Birini seç, sonra devrede bir hücreye tıkla. Alttaki renkli şerit türünü söyler: kırmızı Pauli, yeşil Hadamard, sarı faz, mavi döndürme, pembe çok kübitli. Klavye: H, X, Y, Z, S, T, C (CNOT), W (SWAP).',
+    'info.circuit': '<b>Devre ve zaman</b>Devre soldan sağa okunur: her yatay çizgi bir kübit, hepsi |0⟩ ile başlar. Zaman kaydırıcısıyla adım adım ilerleyip her andaki durumu görebilirsin. Geri al: Ctrl+Z.',
+    'info.measure': '<b>Ölçüm</b>Ölçüm, durumu tek bir sonuca çökertir; her sonucun olasılığı genliğinin karesidir. 256 ölçüm, aynı deneyin gerçek bir cihazda tekrarlanınca nasıl bir dağılım vereceğini gösterir.',
+    'info.state': '<b>Durum</b>Kübitlerin şu anki kuantum durumu. Her çember bir olası sonuç: dolu dairenin boyu genlik (ölçme olasılığının karekökü), rengi ve ibresi faz.',
+    'info.target': '<b>Hedef</b>Ulaşman gereken durum. Benzerlik %99,9 değerini geçince bölüm çözülür. Tüm genlikleri birlikte döndüren ortak (global) faz fiziksel olarak görünmez, o yüzden önemsenmez.',
+    'info.bloch': '<b>Bloch küreleri</b>Her küre bir kübitin tek başına nasıl göründüğünü çizer. Kuzey kutbu |0⟩, güney |1⟩, ekvator süperpozisyonlar. Ok kısalırsa kübit başkalarıyla dolanıktır: bilgisi ilişkide saklıdır.',
+    'info.aria': 'Açıklama',
+    'stars.aria': '{k}/3 yıldız',
     'help.html': HELP_TR,
   },
   en: {
@@ -308,6 +319,17 @@ export const STRINGS = {
     'challenge.story': 'A friend built this state with {n} qubits and challenges you: can you build the same? You only have the gates they used. They needed {k} gates.',
     'challenge.hint': 'Look at the size (probability) and colour (phase) of the target circles. Shrinking Bloch arrows give entanglement away.',
     'foot': 'Open source · MIT licence · no ads, no tracking, no accounts. Your progress is stored only in your own browser.',
+    'info.levels': '<b>Levels</b>Each level is a puzzle: build the target quantum state with gates. The three stars are your reward: solve it at par for ✦✦✦, within two extra gates for ✦✦, otherwise ✦. Progress is stored only in your own browser.',
+    'info.qubits': '<b>Qubits</b>Choose how many qubits the lab uses. Each extra qubit doubles the number of possible states: 4 qubits = 16 amplitudes.',
+    'info.noise': '<b>Noise</b>Real quantum computers lose information to their environment. Pick a noise type and strength: Bloch arrows shrink and measurements show unexpected outcomes. This is why error correction is needed.',
+    'info.gates': '<b>Gates</b>Gates are operations that rotate qubits. Pick one, then click a cell in the circuit. The coloured strip tells the family: red Pauli, green Hadamard, yellow phase, blue rotation, pink multi-qubit. Keys: H, X, Y, Z, S, T, C (CNOT), W (SWAP).',
+    'info.circuit': '<b>Circuit and time</b>The circuit reads left to right: each horizontal line is a qubit, all starting in |0⟩. Use the time slider to step through and see the state at each moment. Undo: Ctrl+Z.',
+    'info.measure': '<b>Measurement</b>Measuring collapses the state to a single outcome; each outcome has probability equal to its amplitude squared. 256 shots show the distribution a real device would give if you repeated the experiment.',
+    'info.state': '<b>State</b>The current quantum state of the qubits. Each circle is a possible outcome: the size of the disc is the amplitude (square root of the probability), its colour and needle the phase.',
+    'info.target': '<b>Target</b>The state you need to reach. The level is solved once fidelity passes 99.9%. A shared (global) phase that rotates every amplitude together is physically invisible, so it is ignored.',
+    'info.bloch': '<b>Bloch spheres</b>Each sphere shows one qubit on its own. North pole is |0⟩, south is |1⟩, the equator holds superpositions. A shrinking arrow means the qubit is entangled: its information lives in the relationship.',
+    'info.aria': 'Explanation',
+    'stars.aria': '{k}/3 stars',
     'help.html': HELP_EN,
     // kısım adları
     'chapter.Temeller': 'Basics',

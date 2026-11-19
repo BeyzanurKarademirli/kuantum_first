@@ -1,5 +1,14 @@
 # Değişiklik günlüğü
 
+## 0.8.0 — 2026-11-19
+- Arka plan uzaya döndü: koyu temada titreşen yıldızlar, bulutsular ve kayan yıldızlar; açık temada
+  takımyıldız çizgili mürekkep yıldız atlası. Süs olarak kullanılan bütün gökkuşağı geçişleri kaldırıldı
+  (yalnızca anlamı olan faz renkleri kaldı).
+- İmleç izi: uzun renkli çizgi yerine imlecin arkasından dökülen, kısa ömürlü kuantum sembolleri.
+- Her bölümün yanında "?" düğmesi: üzerine gelince, klavyeyle odaklanınca ya da dokununca açıklama.
+- Bölüm listesindeki noktalar yıldıza (✦) dönüştü; üzerine gelince "2/3 yıldız" yazar.
+- Seçili kapının çevresinde tek renkli dönen kuyruklu yıldız; kazanınca yıldız kıvılcımı patlaması.
+
 ## 0.7.0 — 2026-11-19
 - İmleçle etkileşimli efektler: imlecin bir kütle gibi büktüğü uzay-zaman ağı, tıklamayla ağda yayılan
   dalgalar, faz renklerinde foton izi ve girişim halkaları, ışık izli elektronlarıyla canlı atom logosu,

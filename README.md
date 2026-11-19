@@ -8,19 +8,19 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 **Oyna:** https://beyzanurkarademirli.github.io/kuantum_first/ · **Türkçe / English**
 
-## Tasarım: "Ebru"
+## Tasarım: "Uzay atlası"
 
-**İmleçle etkileşim:** arka plandaki tel ızgara bir "uzay-zaman ağı"dır; imleç onu bir kütle gibi büker,
-tıkladığın yerden ağ boyunca dalga yayılır. Masaüstünde imlecin ardında faz renklerinde bir foton izi kalır.
-Logo, ışık izi bırakan elektronlarıyla canlı bir atomdur ve imlece doğru eğilir. Arka planda gerçek kuantum
-formülleri süzülür ve imleçle paralaks yapar. Kartlar imlecin altında hafifçe aydınlanır, kapı tuşları 3B eğilir.
+Koyu temada derin uzay: titreşen yıldızlar (imleçle paralaks yapan üç derinlik katmanı), bulutsular ve
+ara sıra kayan yıldızlar. Açık temada kâğıt üzerine mürekkeple çizilmiş bir yıldız atlası, takımyıldız
+çizgileriyle. Önünde bir uzay-zaman ağı var: imleç onu bir kütle gibi büker, tıkladığın yerden ağ boyunca
+dalga yayılır. Masaüstünde imlecin arkasından minik kuantum sembolleri (ψ, ħ, |0⟩, ⊗…) dökülür. Logo,
+ışık izi bırakan elektronlarıyla canlı bir atomdur. Arka planda gerçek kuantum formülleri süzülür.
 
-Arka plandaki akışkan desen süs değil, gerçek bir fizik: üç hareketli dalga kaynağının girişimi,
-oyunun faz renk tekerleğiyle boyanmış (ebru sanatının kuantum hali). Kâğıt-mürekkep paleti,
-yaprak köşeli butonlar, baskı gölgeleri, basınca gömülen kapı tuşları, seçili kapının çevresinde
-dönen faz halkası, kapı yerleşince dalga halkası, kablolarda akan sinyal, ölçümde çökme efekti ve
-kazanınca faz renkli parçacık patlaması. Yazı tipleri (Fraunces, Manrope, JetBrains Mono, SIL OFL)
-siteyle birlikte gelir: dışarıya tek bir istek bile atılmaz. "Hareketi azalt" tercihine uyulur.
+Kâğıt-mürekkep paleti, yaprak köşeli butonlar, baskı gölgeleri, basınca gömülen kapı tuşları ve seçili
+kapının çevresinde dönen bir kuyruklu yıldız. Her bölümün yanındaki **?** düğmesi o bölümü anlatır.
+Renkli tek öğe genlik çemberleridir: oradaki renkler süs değil, fazı gösteren veridir. Yazı tipleri
+(Fraunces, Manrope, JetBrains Mono, SIL OFL) siteyle birlikte gelir; dışarıya tek bir istek atılmaz.
+"Hareketi azalt" tercihine uyulur.
 
 ## Neler var?
 
@@ -95,8 +95,9 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/game.js` | Kehanet kutuları, bölüm değerlendirme, yıldızlar |
 | `js/noise.js` | Yoğunluk matrisi simülatörü ve gürültü kanalları |
 | `js/i18n.js`, `js/strings.js`, `js/levels-en.js` | Çeviri katmanı ve metinler |
-| `js/ebru.js` | Arka plandaki dalga girişimi ve kazanma patlaması |
-| `js/fx.js` | Uzay-zaman ağı, foton izi, ışıldayan atom, denklemler, kart ışığı |
+| `js/space.js` | Uzay arka planı: yıldızlar, bulutsular, kayan yıldızlar, açık temada yıldız atlası |
+| `js/burst.js` | Kazanınca yıldız kıvılcımı patlaması |
+| `js/fx.js` | Uzay-zaman ağı, kuantum sembolü izi, ışıldayan atom, denklemler, kart ışığı |
 | `scripts/cache-bust.sh` | Yayında CSS/JS adreslerine sürüm etiketi ekler (eski önbellek sorunu olmaz) |
 | `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
@@ -127,7 +128,7 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 - [ ] Orta-devre ölçümü ve klasik kontrol
 - [x] Gürültü modu: dekoherans kürenin içine nasıl çeker?
 - [x] İngilizce dil seçeneği
-- [x] Özgün görsel kimlik ("Ebru" tasarımı)
+- [x] Özgün görsel kimlik ("Uzay atlası" tasarımı)
 - [x] Kendi bölümünü tasarla ve bağlantıyla paylaş (meydan okuma)
 
 ## Lisans

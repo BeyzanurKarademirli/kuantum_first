@@ -1,7 +1,7 @@
 // İmleçle etkileşimli görsel efektler:
 //  1. Uzay-zaman ağı: arka plandaki tel ızgara imleci bir kütle gibi algılayıp bükülür;
 //     tıklanan yerden ağ boyunca dalga yayılır.
-//  2. Foton izi: imlecin arkasında faz renklerinde ışık izi (yalnızca fare/kalem).
+//  2. Sembol izi: imlecin arkasından dökülen minik kuantum sembolleri (yalnızca fare/kalem).
 //  3. Işıldayan atom: logodaki elektronlar ışık izi bırakır, imlece doğru eğilir.
 //  4. Denklem tahtası: arka planda süzülen kuantum formülleri, imleçle paralaks.
 //  5. Kart ışığı: imlecin altındaki karta yumuşak bir ışık lekesi.
@@ -101,8 +101,7 @@ export function startField(canvas) {
     // imleç çevresindeki parıltı (kütlenin "ışığı")
     if (pointer.active) {
       const g = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 170);
-      const hue = (t * 40) % 360;
-      g.addColorStop(0, dark ? `hsla(${hue}, 90%, 65%, 0.16)` : `hsla(${hue}, 85%, 55%, 0.10)`);
+      g.addColorStop(0, dark ? 'rgba(160, 175, 255, 0.14)' : 'rgba(23, 20, 43, 0.05)');
       g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
       ctx.fillStyle = g;
       ctx.fillRect(pointer.x - 170, pointer.y - 170, 340, 340);
@@ -116,7 +115,9 @@ export function startField(canvas) {
   requestAnimationFrame(loop);
 }
 
-// ---------------------------------------------------------------- 2: foton izi (arayüzün üstünde)
+// ---------------------------------------------------------------- 2: kuantum sembolü izi
+// İmleç ilerledikçe arkasından minik kuantum sembolleri dökülür; süzülüp kısa sürede söner.
+const SYMBOLS = ['ψ', 'ħ', '|0⟩', '|1⟩', '⟨ψ|', '⊗', 'α', 'β', 'θ', 'π', '∑', '√2', 'H', 'ρ', 'φ', '|+⟩', 'eⁱᶿ', '∞', 'Δ', '⟩'];
 export function startTrail(canvas) {
   if (!finePointer || reduce) { canvas.remove(); return; }
   const ctx = canvas.getContext('2d');
@@ -129,50 +130,60 @@ export function startTrail(canvas) {
   };
   resize();
   addEventListener('resize', resize);
-  const trail = [];
-  let dirty = false;
-  // tıklamada küçük bir girişim halkası
+  const glyphs = [];
   const rings = [];
+  let lastX = null, lastY = null, travelled = 0, si = 0, dirty = false;
+  addEventListener('pointermove', (e) => {
+    if (lastX != null) travelled += Math.hypot(e.clientX - lastX, e.clientY - lastY);
+    lastX = e.clientX; lastY = e.clientY;
+    if (travelled > 34) {
+      travelled = 0;
+      glyphs.push({
+        x: e.clientX + (Math.random() - 0.5) * 8, y: e.clientY + (Math.random() - 0.5) * 8,
+        vx: (Math.random() - 0.5) * 0.5, vy: -0.25 - Math.random() * 0.45,
+        rot: (Math.random() - 0.5) * 0.6, s: SYMBOLS[si++ % SYMBOLS.length],
+        size: 10 + Math.random() * 4, t0: performance.now(),
+      });
+      if (glyphs.length > 14) glyphs.shift();
+    }
+  }, { passive: true });
   addEventListener('pointerdown', (e) => rings.push({ x: e.clientX, y: e.clientY, t0: performance.now() }), { passive: true });
+
+  const LIFE = 900;
   const loop = (now) => {
     requestAnimationFrame(loop);
     if (document.hidden) return;
-    const t = now / 1000;
-    const dark = isDark();
-    if (!trail.length && !rings.length && pointer.speed < 0.5) {
+    while (glyphs.length && now - glyphs[0].t0 > LIFE) glyphs.shift();
+    if (!glyphs.length && !rings.length) {
       if (dirty) { ctx.clearRect(0, 0, W, H); dirty = false; }
       return;
     }
-    ctx.clearRect(0, 0, W, H);
     dirty = true;
-    // yalnızca imleç hareket ederken iz bırak; durunca iz kuyruktan söner
-    if (pointer.active && pointer.speed > 0.5) {
-      trail.push({ x: pointer.tx, y: pointer.ty, hue: (t * 320) % 360 });
-    } else if (trail.length) trail.shift();
-    if (trail.length > 28) trail.splice(0, trail.length - 28);
-    if (trail.length > 1) {
+    ctx.clearRect(0, 0, W, H);
+    const dark = isDark();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const g of glyphs) {
+      const age = (now - g.t0) / LIFE;
+      g.x += g.vx; g.y += g.vy;
       ctx.save();
-      ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-      ctx.lineCap = 'round';
-      for (let k = 1; k < trail.length; k++) {
-        const a = trail[k - 1], b = trail[k];
-        const f = k / trail.length;
-        ctx.strokeStyle = `hsla(${b.hue}, 95%, ${dark ? 62 : 52}%, ${f * 0.75})`;
-        ctx.lineWidth = f * 5;
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-      }
+      ctx.globalAlpha = Math.max(0, 1 - age) * 0.85;
+      ctx.translate(g.x, g.y); ctx.rotate(g.rot * age);
+      ctx.font = `italic 600 ${g.size * (1 - age * 0.25)}px Fraunces, Georgia, serif`;
+      if (dark) { ctx.shadowColor = 'rgba(255, 210, 130, 0.9)'; ctx.shadowBlur = 8; }
+      ctx.fillStyle = dark ? '#ffe7b8' : css('--ink');
+      ctx.fillText(g.s, 0, 0);
       ctx.restore();
     }
-    pointer.speed *= 0.9;
+    // tıklama: altın yörünge halkaları
     for (let i = rings.length - 1; i >= 0; i--) {
-      const age = (now - rings[i].t0) / 600;
+      const age = (now - rings[i].t0) / 650;
       if (age > 1) { rings.splice(i, 1); continue; }
-      for (let k = 0; k < 3; k++) {
-        const a = age - k * 0.14;
+      for (let k = 0; k < 2; k++) {
+        const a = age - k * 0.18;
         if (a <= 0) continue;
-        ctx.strokeStyle = `hsla(${(k * 120 + t * 90) % 360}, 90%, ${dark ? 65 : 50}%, ${(1 - age) * 0.7})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(rings[i].x, rings[i].y, 6 + a * 42, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = dark ? `rgba(255, 214, 140, ${(1 - age) * 0.8})` : `rgba(23, 20, 43, ${(1 - age) * 0.5})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(rings[i].x, rings[i].y, 6 + a * 40, (6 + a * 40) * 0.42, -0.5 + k, 0, Math.PI * 2); ctx.stroke();
       }
     }
   };

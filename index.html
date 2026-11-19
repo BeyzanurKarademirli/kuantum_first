@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <canvas id="ebru" class="ebru" aria-hidden="true"></canvas>
+  <canvas id="space" class="space" aria-hidden="true"></canvas>
   <div id="eqs" class="eqs" aria-hidden="true"></div>
   <canvas id="field" class="field" aria-hidden="true"></canvas>
   <a class="skip" href="#circuit" data-i18n="circuit.aria">Kuantum devresi</a>
@@ -50,7 +50,7 @@
         <p class="gate-desc" id="gateDesc" aria-live="polite"></p>
         <div class="circuit-wrap"><svg id="circuit" role="group" data-i18n-aria="circuit.aria" aria-label="Kuantum devresi"></svg></div>
         <div class="controls">
-          <label class="step"><span data-i18n="ctl.time">Zaman</span> <input type="range" id="step" min="0" max="8" value="8"><output id="stepOut">tümü</output></label>
+          <span class="step"><button class="info" type="button" data-info="circuit"></button><label class="step"><span data-i18n="ctl.time">Zaman</span> <input type="range" id="step" min="0" max="8" value="8"><output id="stepOut">tümü</output></label></span>
           <div class="btns">
             <button id="undo" class="btn" data-i18n-title="ctl.undoTitle"><span aria-hidden="true">↶</span> <span data-i18n="ctl.undo">Geri</span></button>
             <button id="clear" class="btn" data-i18n="ctl.clear">Temizle</button>
@@ -65,7 +65,7 @@
 
       <section class="card measure">
         <div class="measure-head">
-          <h2 data-i18n="m.title">Ölçüm</h2>
+          <h2><span data-i18n="m.title">Ölçüm</span><button class="info" type="button" data-info="measure"></button></h2>
           <div class="btns">
             <button id="m1" class="btn" data-i18n="m.once">Bir kez ölç</button>
             <button id="m256" class="btn ink" data-i18n="m.many">256 kez ölç</button>
@@ -78,20 +78,20 @@
 
     <section class="view">
       <section class="card state" id="stateCard">
-        <h2><span data-i18n="v.state">Durum</span></h2>
+        <h2><span data-i18n="v.state">Durum</span><button class="info" type="button" data-info="state"></button></h2>
         <p id="stateText" class="mono ket-line"></p>
         <canvas id="amps" class="amps"></canvas>
         <div class="legend"><span class="wheel" aria-hidden="true"></span> <span data-i18n="v.legend"></span></div>
         <p id="noiseInfo" class="noise-info" hidden></p>
       </section>
       <section class="card" id="targetCard">
-        <h2><span data-i18n="v.target">Hedef</span> <span id="fid" class="fid"></span></h2>
+        <h2><span data-i18n="v.target">Hedef</span><button class="info" type="button" data-info="target"></button> <span id="fid" class="fid"></span></h2>
         <canvas id="target" class="amps small"></canvas>
         <div id="variants" class="variants" hidden></div>
         <div class="meter"><div id="fidBar"></div></div>
       </section>
       <section class="card">
-        <h2><span data-i18n="v.bloch">Bloch küreleri</span> <small data-i18n="v.blochSub">her kübit tek başına</small></h2>
+        <h2><span data-i18n="v.bloch">Bloch küreleri</span><button class="info" type="button" data-info="bloch"></button> <small data-i18n="v.blochSub">her kübit tek başına</small></h2>
         <div id="blochs" class="blochs"></div>
         <p class="fine" id="entNote"></p>
       </section>
@@ -124,6 +124,7 @@
   </dialog>
 
   <canvas id="trail" class="trail" aria-hidden="true"></canvas>
+  <div id="tip" class="tip" role="tooltip"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <footer class="foot" data-i18n="foot"></footer>

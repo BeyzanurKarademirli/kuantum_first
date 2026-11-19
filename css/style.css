@@ -1,7 +1,7 @@
 /* ============================================================
-   Dolanık — "Ebru" tasarım dili
+   Dolanık — "Uzay atlası" tasarım dili
    Kâğıt + mürekkep paleti, yaprak köşeler, baskı gölgeleri,
-   arka planda gerçek bir dalga girişimi deseni (js/ebru.js).
+   arka planda uzay ve uzay-zaman ağı (js/space.js, js/fx.js).
    ============================================================ */
 
 @font-face { font-family: 'Fraunces'; font-style: normal; font-display: swap; font-weight: 100 900;
@@ -52,7 +52,6 @@
   --rose: #cc2f68;
   --on-accent: #fff9ef;
   --shadow: #17142b;
-  --ebru-opacity: .17;
   --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
   --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -62,17 +61,17 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --paper: #0e0c1a; --paper-2: #17142b; --card: #1a1730; --card-a: rgba(26, 23, 48, .9);
+  --paper: #05040f; --paper-2: #141228; --card: #14122a; --card-a: rgba(20, 18, 42, .86);
   --ink: #f2ecdd; --ink-2: #bfb8cf; --ink-3: #7f7892; --line: #2f2a4a; --line-2: #463f68;
   --vermilion: #ff6a45; --cobalt: #8796ff; --saffron: #ffbf55; --jade: #4fd1a5; --rose: #ff6b9a;
-  --on-accent: #17142b; --shadow: #000; --ebru-opacity: .3; color-scheme: dark;
+  --on-accent: #17142b; --shadow: #000; color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0e0c1a; --paper-2: #17142b; --card: #1a1730; --card-a: rgba(26, 23, 48, .9);
+    --paper: #05040f; --paper-2: #141228; --card: #14122a; --card-a: rgba(20, 18, 42, .86);
     --ink: #f2ecdd; --ink-2: #bfb8cf; --ink-3: #7f7892; --line: #2f2a4a; --line-2: #463f68;
     --vermilion: #ff6a45; --cobalt: #8796ff; --saffron: #ffbf55; --jade: #4fd1a5; --rose: #ff6b9a;
-    --on-accent: #17142b; --shadow: #000; --ebru-opacity: .3; color-scheme: dark;
+    --on-accent: #17142b; --shadow: #000; color-scheme: dark;
   }
 }
 
@@ -93,11 +92,7 @@ body::before {
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.ebru {
-  position: fixed; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px);
-  z-index: 0; pointer-events: none; opacity: var(--ebru-opacity); image-rendering: auto;
-  transition: opacity .6s;
-}
+.space { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .top, .layout, .foot { position: relative; z-index: 1; }
 
 /* uzay-zaman ağı + foton izi (js/fx.js) */
@@ -211,10 +206,9 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
   margin: 0 0 12px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap;
   font: italic 600 19px/1.1 var(--font-display); font-variation-settings: 'SOFT' 50, 'opsz' 36;
 }
-/* başlık önündeki faz çizgisi */
+/* başlık önündeki küçük yıldız */
 .card > h2::before, .measure-head h2::before {
-  content: ''; width: 18px; height: 4px; border-radius: 2px; align-self: center; flex: none;
-  background: linear-gradient(90deg, var(--vermilion), var(--saffron), var(--jade), var(--cobalt));
+  content: '✦'; align-self: center; flex: none; font: normal 13px/1 var(--font-body); color: var(--saffron);
 }
 .card h2 small { color: var(--ink-3); font: 500 12px/1 var(--font-body); }
 .fine { font-size: 12.5px; color: var(--ink-3); margin: 10px 0 0; line-height: 1.5; }
@@ -240,9 +234,9 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
 .levels button.on { background: var(--ink); color: var(--paper); }
 .levels .num { font: italic 600 15px/1 var(--font-display); width: 22px; text-align: right; flex: none; opacity: .8; }
 .levels .ttl { flex: 1; line-height: 1.25; }
-.levels .st { display: flex; gap: 2px; flex: none; }
-.levels .st i { width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .35; }
-.levels .st i.f { background: var(--saffron); border-color: var(--saffron); opacity: 1; }
+.levels .st { display: flex; gap: 1px; flex: none; }
+.levels .st i { font: normal 11px/1 var(--font-body); opacity: .28; }
+.levels .st i.f { color: var(--saffron); opacity: 1; }
 .total { display: flex; justify-content: space-between; align-items: center; margin: 12px 10px 2px; font: 600 12px/1 var(--font-mono); color: var(--ink-3); }
 .qcount { display: flex; gap: 6px; margin: 0 10px 12px; }
 .qcount button {
@@ -305,7 +299,7 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
 .gate.sel { background: var(--ink); color: var(--paper); }
 .gate.sel::after {
   content: ''; position: absolute; inset: -6px; border-radius: 16px 6px 16px 6px; z-index: -1;
-  background: conic-gradient(from var(--spin), #ff5a3c, #ffb340, #f3e14a, #3fd18b, #3fb6ff, #7a6bff, #ff4fa3, #ff5a3c);
+  background: conic-gradient(from var(--spin), transparent 0 62%, color-mix(in srgb, var(--saffron) 40%, transparent) 80%, var(--saffron) 96%, #fff4d6 100%);
   animation: spin 2.4s linear infinite;
 }
 @keyframes spin { to { --spin: 360deg; } }
@@ -323,7 +317,7 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
 #circuit .cell:hover { fill: color-mix(in srgb, var(--vermilion) 10%, transparent); }
 #circuit .cell:focus-visible { outline: none; fill: color-mix(in srgb, var(--vermilion) 18%, transparent); }
 #circuit .wire { stroke: var(--ink-3); stroke-width: 1.5; }
-#circuit .flow { stroke: var(--vermilion); stroke-width: 2; stroke-dasharray: 2 22; stroke-linecap: round; animation: flow 1.6s linear infinite; opacity: .7; }
+#circuit .flow { stroke: var(--saffron); stroke-width: 2; stroke-dasharray: 2 22; stroke-linecap: round; animation: flow 1.6s linear infinite; opacity: .7; }
 @keyframes flow { to { stroke-dashoffset: -24; } }
 #circuit .qlabel { fill: var(--ink-2); font: 500 12px var(--font-mono); }
 #circuit .qlabel tspan.q { font: italic 700 14px var(--font-display); fill: var(--ink); }
@@ -342,7 +336,7 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
 #circuit .future { opacity: .28; }
 #circuit .disabled { fill: url(#hatch); }
 #circuit .oracle { fill: var(--ink); }
-#circuit .oracle-edge { fill: none; stroke: url(#phaseGrad); stroke-width: 2.5; }
+#circuit .oracle-edge { fill: none; stroke: var(--saffron); stroke-width: 2; stroke-dasharray: 4 3; }
 #circuit .otext { fill: var(--paper); font: italic 700 17px var(--font-display); pointer-events: none; }
 #circuit .opshape { transform-box: fill-box; transform-origin: center; }
 #circuit .pop { animation: pop .42s var(--ease-spring) both; }
@@ -357,8 +351,9 @@ code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
 
 /* kaydırıcı */
 input[type="range"] { -webkit-appearance: none; appearance: none; height: 22px; background: transparent; cursor: pointer; width: 140px; }
-input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--vermilion), var(--saffron), var(--jade), var(--cobalt)); }
-input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--vermilion), var(--saffron), var(--jade), var(--cobalt)); }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line-2); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line-2); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--saffron); }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 6px 2px 6px 2px; background: var(--card); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow); transition: transform .2s var(--ease-spring); }
 input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 6px 2px 6px 2px; background: var(--card); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow); }
 input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25) rotate(45deg); }
@@ -429,7 +424,7 @@ input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25) rotate
 .burst { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 .win-box {
   position: relative; background: var(--card); border: 2px solid var(--ink); border-radius: 30px 8px 30px 8px;
-  padding: 30px 32px; max-width: 440px; text-align: center; box-shadow: 8px 8px 0 var(--vermilion);
+  padding: 30px 32px; max-width: 440px; text-align: center; box-shadow: 8px 8px 0 var(--saffron);
   animation: winpop .55s var(--ease-spring) both;
 }
 @keyframes winpop { from { transform: scale(.7) rotate(-4deg); opacity: 0; } }
@@ -501,3 +496,21 @@ body.mode-help .layout { grid-template-columns: 236px minmax(0, 1fr); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- "?" açıklama düğmeleri ---------- */
+.info {
+  display: inline-grid; place-items: center; flex: none; width: 19px; height: 19px; padding: 0; margin-left: 2px;
+  border: 1.5px solid var(--ink-3); border-radius: 50%; background: none; color: var(--ink-3); cursor: help;
+  font: normal 700 11px/1 var(--font-mono); vertical-align: middle; transition: all .2s;
+  align-self: center; position: relative; z-index: 2;
+}
+.info:hover, .info:focus-visible, .info[aria-expanded="true"] { border-color: var(--saffron); color: var(--ink); background: color-mix(in srgb, var(--saffron) 22%, transparent); transform: rotate(12deg); }
+.side h3 { display: flex; align-items: center; gap: 6px; }
+.tip {
+  position: fixed; z-index: 60; max-width: min(300px, calc(100vw - 24px)); pointer-events: none;
+  background: var(--ink); color: var(--paper); padding: 11px 14px; border-radius: 14px 4px 14px 4px;
+  font: 500 13px/1.5 var(--font-body); box-shadow: 4px 4px 0 var(--saffron);
+  opacity: 0; transform: translateY(4px); transition: opacity .18s, transform .18s;
+}
+.tip.show { opacity: 1; transform: none; }
+.tip b { color: var(--saffron); font: italic 700 14px var(--font-display); display: block; margin-bottom: 3px; }

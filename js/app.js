@@ -11,7 +11,8 @@ import {
 import { toQasm, fromQasm } from './qasm.js';
 import { t, tx, setLang, getLang, detectLang } from './i18n.js';
 import { LEVELS_EN } from './levels-en.js';
-import { startEbru, burst } from './ebru.js';
+import { startSpace } from './space.js';
+import { burst } from './burst.js';
 import { startField, startTrail, startAtom, startEquations, startSpotlight } from './fx.js';
 import {
   CHANNELS, runNoisy, rhoBloch, rhoProbabilities, purity, rhoFidelity, sampleRho, measureShotsRho,
@@ -66,7 +67,46 @@ function setRich(el, text) {
   }
 }
 
+// "?" açıklama düğmeleri: tek bir ipucu kutusu; üzerine gelince, odaklanınca ya da dokununca açılır
+const infoHtml = (key) => `<button class="info" type="button" data-info="${key}"></button>`;
+function labelInfo(root = document) {
+  for (const b of root.querySelectorAll('.info')) { b.textContent = '?'; b.setAttribute('aria-label', `${t('info.aria')}`); }
+}
+function setupInfoTips() {
+  const tip = $('tip');
+  let current = null;
+  const show = (btn) => {
+    current = btn;
+    tip.innerHTML = t(`info.${btn.dataset.info}`);
+    tip.classList.add('show');
+    btn.setAttribute('aria-expanded', 'true');
+    const r = btn.getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    const x = Math.max(12, Math.min(innerWidth - tw - 12, r.left + r.width / 2 - tw / 2));
+    let y = r.bottom + 10;
+    if (y + th > innerHeight - 12) y = r.top - th - 10;
+    tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+  };
+  const hide = () => {
+    current?.setAttribute('aria-expanded', 'false');
+    current = null;
+    tip.classList.remove('show');
+  };
+  document.addEventListener('pointerover', (e) => { const b = e.target.closest?.('.info'); if (b && e.pointerType !== 'touch') show(b); });
+  document.addEventListener('pointerout', (e) => { const b = e.target.closest?.('.info'); if (b && !b.contains(e.relatedTarget) && document.activeElement !== b) hide(); });
+  document.addEventListener('focusin', (e) => { if (e.target.matches?.('.info')) show(e.target); });
+  document.addEventListener('focusout', (e) => { if (e.target.matches?.('.info')) hide(); });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest?.('.info');
+    if (b) { e.preventDefault(); e.stopPropagation(); if (current === b && document.activeElement !== b) hide(); else show(b); }
+    else if (current) hide();
+  }, true);
+  addEventListener('scroll', hide, { passive: true });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+}
+
 function applyStaticText() {
+  labelInfo();
   document.documentElement.lang = getLang();
   document.title = t('meta.title');
   document.querySelector('meta[name="description"]').setAttribute('content', t('meta.desc'));
@@ -210,8 +250,6 @@ function renderCircuit() {
   const defs = el('defs', {}, svg);
   const pat = el('pattern', { id: 'hatch', width: 7, height: 7, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
   el('line', { x1: 0, y1: 0, x2: 0, y2: 7, stroke: 'var(--line-2)', 'stroke-width': 2 }, pat);
-  const pg = el('linearGradient', { id: 'phaseGrad', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
-  ['#ff5a3c', '#ffb340', '#3fd18b', '#3fb6ff', '#7a6bff', '#ff4fa3'].forEach((c, i, a) => el('stop', { offset: i / (a.length - 1), 'stop-color': c }, pg));
 
   if (ui.step < COLS) {
     el('rect', { class: 'now', x: LW + ui.step * CW, y: 0, width: (COLS - ui.step) * CW, height: H, opacity: 0.5 }, svg);
@@ -353,6 +391,8 @@ function renderPalette() {
     lab.appendChild(sel);
     pal.appendChild(lab);
   }
+  pal.insertAdjacentHTML('beforeend', infoHtml('gates'));
+  labelInfo(pal);
 }
 
 function setDesc() {
@@ -381,7 +421,7 @@ function renderSide() {
   const card = document.createElement('div');
   card.className = 'card';
   if (ui.mode === 'sandbox') {
-    card.innerHTML = `<h3>${t('side.qubits')}</h3>`;
+    card.innerHTML = `<h3>${t('side.qubits')}${infoHtml('qubits')}</h3>`;
     const qc = document.createElement('div');
     qc.className = 'qcount';
     for (let k = 1; k <= 4; k++) {
@@ -398,13 +438,14 @@ function renderSide() {
       qc.appendChild(b);
     }
     card.appendChild(qc);
+    labelInfo(card);
     const p = document.createElement('p');
     p.className = 'fine';
     p.textContent = t('side.labNote');
     card.appendChild(p);
     card.appendChild(noisePanel());
   } else {
-    card.innerHTML = `<h3>${t('side.levels')}</h3>`;
+    card.innerHTML = `<h3>${t('side.levels')}${infoHtml('levels')}</h3>`;
     const list = document.createElement('div');
     list.className = 'levels';
     LEVELS.forEach((lv, i) => {
@@ -420,12 +461,14 @@ function renderSide() {
       const b = document.createElement('button');
       if (i === ui.levelIdx && ui.mode === 'level' && !ui.custom) { b.className = 'on'; b.setAttribute('aria-current', 'true'); }
       const stars = ui.progress[lv.id] || 0;
-      b.innerHTML = `<span class="num">${i + 1}</span><span class="ttl"></span><span class="st" aria-label="${stars}/3 ★">${[0, 1, 2].map((k) => `<i class="${k < stars ? 'f' : ''}"></i>`).join('')}</span>`;
+      const starLabel = t('stars.aria', { k: stars });
+      b.innerHTML = `<span class="num">${i + 1}</span><span class="ttl"></span><span class="st" title="${starLabel}" aria-label="${starLabel}">${[0, 1, 2].map((k) => `<i class="${k < stars ? 'f' : ''}" aria-hidden="true">✦</i>`).join('')}</span>`;
       b.querySelector('.ttl').textContent = lvText(lv, 'title');
       b.addEventListener('click', () => { setMode('level'); loadLevel(i); });
       list.appendChild(b);
     });
     card.appendChild(list);
+    labelInfo(card);
     // mobilde liste yatay kayar: seçili bölümü görünür yap (sayfayı dikey kaydırmadan)
     requestAnimationFrame(() => {
       const on = list.querySelector('button.on');
@@ -443,7 +486,7 @@ function renderSide() {
 function noisePanel() {
   const box = document.createElement('div');
   box.className = 'noise';
-  box.innerHTML = `<h3>${t('noise.title')}</h3>`;
+  box.innerHTML = `<h3>${t('noise.title')}${infoHtml('noise')}</h3>`;
   const sel = document.createElement('select');
   sel.setAttribute('aria-label', t('noise.kind'));
   for (const [k, name] of [['yok', t('noise.off')], ...Object.keys(CHANNELS).map((k) => [k, chName(k)])]) {
@@ -469,6 +512,7 @@ function noisePanel() {
   range.addEventListener('input', () => { ui.noise.p = +range.value; sync(); update(); });
   lab.append(range, out);
   box.append(sel, lab, desc);
+  labelInfo(box);
   sync();
   return box;
 }
@@ -945,7 +989,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ui
 
 // ---------- başlat ----------
 applyStaticText();
-startEbru($('ebru'));
+setupInfoTips();
+startSpace($('space'));
 startField($('field'));
 startTrail($('trail'));
 startAtom($('atom'));
