@@ -5,6 +5,8 @@ import {
   entanglementEntropy, measureShots, formatState, GATES,
 } from '../js/quantum.js';
 import { LEVELS } from '../js/levels.js';
+import { evaluateLevel, lockedOps, starsFor } from '../js/game.js';
+import { solutionOps } from './solutions.mjs';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
 
@@ -66,39 +68,30 @@ test('formatState okunur', () => {
   assert.equal(formatState(s), '0.707|0⟩ − 0.707|1⟩');
 });
 
-// Her bölümün çözülebilir olduğunu kanıtlayan örnek çözümler
-const SOLUTIONS = {
-  'bit-cevir': [['X', 0]],
-  superpozisyon: [['H', 0]],
-  'eksi-dunya': [['X', 0], ['H', 0]],
-  'hayali-yon': [['H', 0], ['S', 0]],
-  'sekizde-bir': [['H', 0], ['T', 0]],
-  girisim: [['H', 0], ['Z', 0], ['H', 0]],
-  bell: [['H', 0], ['CNOT', 0, 1]],
-  'hadamard-yagmuru': [['H', 0], ['H', 1], ['H', 2]],
-  'kardes-bitler': [['H', 0], ['CNOT', 0, 1], ['X', 1]],
-  'hayali-bell': [['H', 0], ['S', 0], ['CNOT', 0, 1]],
-  'gizli-faz': [['H', 0], ['H', 1], ['CZ', 0, 1]],
-  singlet: [['H', 0], ['Z', 0], ['CNOT', 0, 1], ['X', 1]],
-  ghz: [['H', 0], ['CNOT', 0, 1], ['CNOT', 1, 2]],
-  takasci: [['X', 0], ['CNOT', 0, 1], ['CNOT', 1, 0]],
-  'faz-labirenti': [['H', 0], ['H', 1], ['S', 1]],
-};
-
 for (const lv of LEVELS) {
   test(`bölüm çözülebilir: ${lv.title}`, () => {
-    const sol = SOLUTIONS[lv.id];
-    assert.ok(sol, 'çözüm tanımlı');
-    const ops = sol.map(([g, q, q2], col) => ({ g, q, q2, col }));
-    for (const op of ops) {
+    const ops = [...lockedOps(lv), ...solutionOps(lv.id)];
+    for (const op of ops.filter((o) => !o.locked)) {
       assert.ok(lv.gates.includes(op.g), `${op.g} bu bölümde izinli`);
       assert.ok(GATES[op.g]);
       const rows = lv.allowedRows?.[op.g];
       if (rows) assert.ok(rows.includes(op.q));
+      assert.ok(op.col < 8, 'sütun sınırı');
+      if (lv.oracle) assert.notEqual(op.col, lv.oracle.col, 'kehanet sütunu dolu');
     }
-    const s = runCircuit(lv.n, ops);
-    const f = fidelity(s, stateFromAmplitudes(lv.n, lv.target));
-    assert.ok(f > 0.999, `fidelity ${f}`);
-    assert.ok(ops.length <= lv.par, `par ${lv.par} ile çözülebilir`);
+    const r = evaluateLevel(lv, ops);
+    assert.ok(r.solved, JSON.stringify(r.checks));
+    assert.equal(starsFor(lv, ops), 3, `par ${lv.par} ile çözülebilir`);
   });
 }
+
+test('kehanet: kehanetsiz devre bütün varyantları çözmez', () => {
+  for (const lv of LEVELS.filter((l) => l.oracle)) {
+    const r = evaluateLevel(lv, lockedOps(lv));
+    assert.ok(!r.solved, lv.id);
+  }
+});
+
+test('bölüm kimlikleri benzersiz', () => {
+  assert.equal(new Set(LEVELS.map((l) => l.id)).size, LEVELS.length);
+});

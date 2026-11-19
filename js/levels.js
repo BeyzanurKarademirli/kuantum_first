@@ -111,4 +111,18 @@ export const LEVELS = [
     hint: 'Ok uzunlukları 1 ise durum çarpım durumudur: her kübiti ayrı hazırla.',
     n: 2, gates: ['H', 'S', 'T', 'CNOT', 'CZ'], target: [1, i, 1, i], par: 3,
   },
+  {
+    id: 'deutsch',
+    title: 'Deutsch\'un Kehaneti',
+    story: 'İlk kuantum algoritması (1985). Kilitli U_f kutusu tek bitlik gizli bir f fonksiyonu saklıyor: ya sabit (f(0) = f(1)) ya da dengeli. Klasik bir bilgisayar kutuyu iki kez sorgulamak zorunda. Sen tek sorguyla bul: devrenin sonunda q0, sabit kutularda 0, dengeli kutularda 1 ölçülmeli. Devren dört olası kutunun hepsinde çalışmalı.',
+    hint: 'q1\'i |−⟩ durumuna getir (X sonra H), q0\'ı süperpozisyona sok. Kutu, f(x)\'i faz olarak q0\'a "geri teper". Sonra q0\'a bir H daha.',
+    n: 2, gates: ['H', 'X'], oracle: { kind: 'deutsch', col: 2 }, par: 4,
+  },
+  {
+    id: 'grover',
+    title: 'Grover\'ın Arayışı',
+    story: 'Dört kutudan birinde hazine var ve U_ω kehaneti hazinenin fazını çevirerek "işaretliyor". Klasik olarak ortalama 2,25 kez bakarsın. Grover algoritması 2 kübitte tek sorguda kesin bulur. Devren hangi kutu işaretli olursa olsun, sonunda tam olarak o durumu vermeli.',
+    hint: 'Önce eşit süperpozisyon. Kehanetten sonra "ortalama etrafında yansıtma" (difüzyon): H H, X X, CZ, X X, H H.',
+    n: 2, gates: ['H', 'X', 'CZ'], oracle: { kind: 'grover', col: 1 }, par: 11,
+  },
 ];

@@ -8,9 +8,13 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 ## Neler var?
 
-- **15 bölüm** — tek bit çevirmekten Bell çiftine, GHZ üçlüsüne, singlet durumuna ve
+- **17 bölüm** — tek bit çevirmekten Bell çiftine, GHZ üçlüsüne, singlet durumuna ve
   "X kapısı sadece üst kübite takılabiliyor" gibi kısıtlı bulmacalara kadar.
   Her bölüm ideal kapı sayısına göre ★ ile puanlanır.
+- **Gerçek algoritmalar** — *Deutsch* ve *Grover* bölümlerinde kilitli bir kehanet (oracle) kutusu var;
+  devren kutunun her olası halinde doğru sonucu vermeli.
+- **OpenQASM 2.0 / 3.0** — devreni endüstri standardı dile aktar, IBM Quantum, Qiskit, Cirq ya da
+  Amazon Braket'te (gerçek donanım dahil) çalıştır. Başka yerde yazılmış QASM kodunu içe aktar.
 - **Serbest Laboratuvar** — 4 kübite kadar, 9 kapı (H, X, Y, Z, S, T, CNOT, CZ, SWAP).
   Devreni bağlantı olarak paylaşabilirsin (URL'de saklanır).
 - **Genlik çemberleri** — boyut = genlik büyüklüğü, renk ve ibre = faz.
@@ -31,12 +35,24 @@ python3 -m http.server 8000
 
 Sonra `http://localhost:8000` adresini aç.
 
-## Test
+## Test ve doğrulama
 
-Simülatör ve her bölümün çözülebilirliği bağımlılıksız testlerle doğrulanır:
+Simülatör, QASM ayrıştırıcı ve her bölümün ideal kapı sayısıyla çözülebilirliği bağımlılıksız testlerle doğrulanır:
 
 ```bash
 npm test
+```
+
+**Qiskit çapraz doğrulaması:** Her push'ta CI, bütün bölüm çözümlerini (kehanet varyantları dahil) ve
+60 tohumlu rastgele devreyi OpenQASM 2 ve 3 olarak IBM Qiskit'e yükler; Qiskit'in durum vektörünü
+Dolanık'ınkiyle karşılaştırır (166/166 birebir uyum). Yerelde:
+
+```bash
+pip install -r tests/qiskit/requirements.txt
+```
+
+```bash
+node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.py fixtures.json
 ```
 
 ## Yayın
@@ -50,10 +66,13 @@ npm test
 |---|---|
 | `js/quantum.js` | Durum-vektörü simülatörü: kapılar, Bloch vektörü, dolanıklık entropisi, ölçüm |
 | `js/levels.js` | Bölümler ve hedef durumlar |
+| `js/game.js` | Kehanet kutuları, bölüm değerlendirme, yıldızlar |
+| `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
 | `js/audio.js` | Web Audio ile "süperpozisyonu dinle" |
 | `js/app.js` | Arayüz, devre düzenleyici, ilerleme, paylaşım |
-| `tests/` | `node --test` ile birim testleri |
+| `tests/` | `node --test` birim testleri, `tests/qiskit/` Qiskit doğrulaması |
+| `scripts/` | Doğrulama verisi üretimi |
 
 Kural: kübit 0 ket gösteriminde en soldaki bittir (`|q0 q1 q2⟩`).
 
@@ -66,7 +85,10 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 ## Yol haritası
 
 - [ ] Rotasyon kapıları (Rx, Ry, Rz) ve W durumu bölümü
-- [ ] Algoritma bölümleri: Deutsch–Jozsa, Grover (2 kübit), kuantum ışınlanma
+- [x] Algoritma bölümleri: Deutsch, Grover (2 kübit)
+- [x] OpenQASM 2/3 dışa-içe aktarma
+- [x] Qiskit ile otomatik çapraz doğrulama
+- [ ] Bernstein–Vazirani, kuantum ışınlanma, süper yoğun kodlama
 - [ ] Orta-devre ölçümü ve klasik kontrol
 - [ ] Gürültü modu: dekoherans kürenin içine nasıl çeker?
 - [ ] İngilizce dil seçeneği

@@ -1,0 +1,55 @@
+// Qiskit çapraz doğrulaması için test verisi üretir.
+// Her kayıt: devrenin OpenQASM 2 ve 3 hali + Dolanık simülatörünün hesapladığı genlikler.
+// Kullanım: node scripts/export-fixtures.mjs > fixtures.json
+import { runCircuit } from '../js/quantum.js';
+import { toQasm } from '../js/qasm.js';
+import { LEVELS } from '../js/levels.js';
+import { expandOracle, lockedOps, oracleOf } from '../js/game.js';
+import { solutionOps } from '../tests/solutions.mjs';
+
+const out = [];
+const add = (name, n, ops) => {
+  const s = runCircuit(n, ops);
+  out.push({
+    name, n,
+    qasm2: toQasm(n, ops, { version: 2, measure: false }),
+    qasm3: toQasm(n, ops, { version: 3, measure: false }),
+    amps: Array.from(s.re, (r, i) => [r, s.im[i]]),
+  });
+};
+
+for (const lv of LEVELS) {
+  const ops = [...lockedOps(lv), ...solutionOps(lv.id)];
+  const orc = oracleOf(lv);
+  if (!orc) add(`bölüm:${lv.id}`, lv.n, ops);
+  else orc.variants.forEach((v) => add(`bölüm:${lv.id}:${v.name}`, lv.n, expandOracle(ops, v)));
+}
+
+// Tohumlu rastgele devreler (mulberry32) — her çalıştırmada aynı
+let seed = 20261119;
+const rnd = () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const ONE = ['H', 'X', 'Y', 'Z', 'S', 'T'];
+const TWO = ['CNOT', 'CZ', 'SWAP'];
+for (let k = 0; k < 60; k++) {
+  const n = 1 + Math.floor(rnd() * 4);
+  const len = 5 + Math.floor(rnd() * 25);
+  const ops = [];
+  for (let c = 0; c < len; c++) {
+    if (n > 1 && rnd() < 0.35) {
+      const q = Math.floor(rnd() * n);
+      let q2 = Math.floor(rnd() * (n - 1));
+      if (q2 >= q) q2++;
+      ops.push({ g: TWO[Math.floor(rnd() * 3)], q, q2, col: c });
+    } else {
+      ops.push({ g: ONE[Math.floor(rnd() * 6)], q: Math.floor(rnd() * n), col: c });
+    }
+  }
+  add(`rastgele:${k}`, n, ops);
+}
+
+process.stdout.write(JSON.stringify(out, null, 1));

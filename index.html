@@ -41,6 +41,7 @@
             <button id="clear">Temizle</button>
             <button id="listen" title="Durumu dinle">♪ Dinle</button>
             <label class="toggle"><input type="checkbox" id="autoSound"> sesli mod</label>
+            <button id="qasm" title="OpenQASM olarak dışa/içe aktar">⟨/⟩ QASM</button>
             <button id="share" class="sandbox-only">🔗 Paylaş</button>
           </div>
         </div>
@@ -68,6 +69,7 @@
       <div class="card" id="targetCard">
         <h2>Hedef <span id="fid" class="fid"></span></h2>
         <canvas id="target" class="amps small"></canvas>
+        <div id="variants" class="variants" hidden></div>
         <div class="meter"><div id="fidBar"></div></div>
       </div>
       <div class="card">
@@ -86,6 +88,21 @@
       <div class="btns"><button id="stay">Devrede kal</button><button id="next" class="primary">Sonraki bölüm →</button></div>
     </div>
   </div>
+
+ <dialog id="qasmDlg" class="qasm-dlg" aria-labelledby="qasmTitle">
+    <h2 id="qasmTitle">OpenQASM</h2>
+    <p class="fine">OpenQASM, kuantum devreleri için endüstri standardı dildir. Bu kodu IBM Quantum Platform, Qiskit, Amazon Braket ya da Cirq gibi araçlara yapıştırıp <b>gerçek kuantum donanımında</b> çalıştırabilirsin. Serbest Laboratuvar'da başka bir yerden kod yapıştırıp içe de aktarabilirsin.</p>
+    <label class="fine">Sürüm
+      <select id="qasmVer"><option value="3">OpenQASM 3.0</option><option value="2">OpenQASM 2.0</option></select>
+    </label>
+    <textarea id="qasmCode" spellcheck="false" rows="14" aria-label="OpenQASM kodu"></textarea>
+    <p id="qasmErr" class="err" role="alert"></p>
+    <div class="btns">
+      <button id="qasmCopy">Kopyala</button>
+      <button id="qasmImport" class="primary">İçe aktar</button>
+      <button id="qasmClose">Kapat</button>
+    </div>
+  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 

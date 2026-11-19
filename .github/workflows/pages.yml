@@ -25,9 +25,26 @@ jobs:
           node-version: 22
       - run: npm test
 
+  qiskit:
+    name: Qiskit çapraz doğrulama
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tests/qiskit/requirements.txt
+      - run: pip install -r tests/qiskit/requirements.txt
+      - run: node scripts/export-fixtures.mjs > fixtures.json
+      - run: python tests/qiskit/verify.py fixtures.json
+
   deploy:
     if: github.event_name != 'pull_request'
-    needs: test
+    needs: [test, qiskit]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
