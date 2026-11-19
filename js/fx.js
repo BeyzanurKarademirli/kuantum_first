@@ -4,7 +4,6 @@
 //  2. Sembol izi: imlecin arkasından dökülen minik kuantum sembolleri (yalnızca fare/kalem).
 //  3. Işıldayan atom: logodaki elektronlar ışık izi bırakır, imlece doğru eğilir.
 //  4. Denklem tahtası: arka planda süzülen kuantum formülleri, imleçle paralaks.
-//  5. Kart ışığı: imlecin altındaki karta yumuşak bir ışık lekesi.
 // "Hareketi azalt" tercihinde hepsi durağan tek kare çizer ya da kapanır.
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -98,14 +97,6 @@ export function startField(canvas) {
     }
     ctx.stroke();
 
-    // imleç çevresindeki parıltı (kütlenin "ışığı")
-    if (pointer.active) {
-      const g = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 170);
-      g.addColorStop(0, dark ? 'rgba(160, 175, 255, 0.14)' : 'rgba(23, 20, 43, 0.05)');
-      g.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(pointer.x - 170, pointer.y - 170, 340, 340);
-    }
 
     pointer.speed *= 0.9;
   };
@@ -303,7 +294,7 @@ export function startEquations(layer) {
 export function startSpotlight() {
   if (!finePointer) return;
   document.addEventListener('pointermove', (e) => {
-    const card = e.target.closest?.('.card, .gate, .win-box');
+    const card = e.target.closest?.('.gate');
     if (!card) return;
     const r = card.getBoundingClientRect();
     card.style.setProperty('--mx', `${e.clientX - r.left}px`);

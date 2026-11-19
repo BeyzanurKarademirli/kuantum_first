@@ -1,5 +1,8 @@
 # Değişiklik günlüğü
 
+## 0.9.2 — 2026-11-19
+- İmlecin kendi ışığı kaldırıldı: kartlarda imleci izleyen altın ışık lekesi ve arka plan ağındaki imleç parıltısı yok.
+
 ## 0.9.1 — 2026-11-19
 - Kaydırıcılar arka plandan ayrışıyor: geçilen kısım safran, kalan kısım belirgin gri, safran kenarlı tutamaç.
 - Rehber turda alttaki noktalar tıklanabilir: istenen adıma doğrudan atlanır (ekran okuyucu etiketli).

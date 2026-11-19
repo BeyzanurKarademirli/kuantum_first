@@ -112,13 +112,6 @@ body::before {
 :root[data-theme="dark"] .eqs span { opacity: calc(var(--d) * .13); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .eqs span { opacity: calc(var(--d) * .13); } }
 
-/* kartlarda imleci izleyen ışık lekesi */
-.card::before, .win-box::before {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
-  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--saffron) 13%, transparent), transparent 70%);
-  opacity: 0; transition: opacity .35s;
-}
-.card:hover::before, .win-box:hover::before { opacity: 1; }
 .card > *, .win-box > * { position: relative; z-index: 1; }
 .mono, code { font-family: var(--font-mono); font-size: .92em; }
 code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
