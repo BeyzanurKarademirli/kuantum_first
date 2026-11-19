@@ -25,7 +25,40 @@ export const GATES = {
   CNOT: { arity: 2, label: '⊕', name: 'CNOT', desc: 'Kontrol kübiti |1⟩ ise hedefi çevirir. Dolanıklığın anahtarı. Önce kontrolü, sonra aynı sütunda hedefi seç.' },
   CZ: { arity: 2, label: 'CZ', name: 'Kontrollü-Z', desc: 'İki kübit de |1⟩ ise faz −1 ekler. Simetriktir.' },
   SWAP: { arity: 2, label: '×', name: 'SWAP', desc: 'İki kübitin durumlarını takas eder.' },
+  RX: { arity: 1, param: true, label: 'Rx', name: 'Rx(θ)', desc: 'Bloch küresinde X ekseni etrafında θ kadar döndürür. Açıyı yandaki listeden seç.' },
+  RY: { arity: 1, param: true, label: 'Ry', name: 'Ry(θ)', desc: 'Y ekseni etrafında θ kadar döndürür. Genlikler gerçek kalır; olasılığı istediğin oranda ayarlamanın yolu.' },
+  RZ: { arity: 1, param: true, label: 'Rz', name: 'Rz(θ)', desc: 'Z ekseni etrafında θ kadar döndürür: yalnızca göreli fazı değiştirir.' },
 };
+
+// Döndürme matrisleri: R(θ) = exp(−iθσ/2)
+export function rotationMatrix(g, theta) {
+  const c = Math.cos(theta / 2), s = Math.sin(theta / 2);
+  switch (g) {
+    case 'RX': return [[c, 0], [0, -s], [0, -s], [c, 0]];
+    case 'RY': return [[c, 0], [-s, 0], [s, 0], [c, 0]];
+    case 'RZ': return [[c, -s], [0, 0], [0, 0], [c, s]];
+    default: throw new Error(`Döndürme kapısı değil: ${g}`);
+  }
+}
+
+// Arayüzde sunulan açılar (radyan); π/24'ün katları okunaklı yazılır.
+export const ANGLES = [1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4, 1, -1 / 4, -1 / 2].map((k) => k * Math.PI);
+
+function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+
+// θ'yı "π/4", "−2π/3" gibi yaz; π/24'ün katı değilse ondalık.
+export function angleLabel(theta, { ascii = false } = {}) {
+  const k = Math.round((theta / Math.PI) * 24);
+  const pi = ascii ? 'pi' : 'π';
+  const minus = ascii ? '-' : '−';
+  if (Math.abs(k * Math.PI / 24 - theta) > 1e-9) return ascii ? `${+theta.toPrecision(15)}` : theta.toFixed(3);
+  if (k === 0) return '0';
+  const g = gcd(Math.abs(k), 24);
+  const num = Math.abs(k) / g, den = 24 / g;
+  const sign = k < 0 ? minus : '';
+  const top = num === 1 ? pi : ascii ? `${num}*${pi}` : `${num}${pi}`;
+  return `${sign}${top}${den === 1 ? '' : `/${den}`}`;
+}
 
 export function zeroState(n) {
   const N = 1 << n;
@@ -95,6 +128,9 @@ export function applyOp(s, op) {
     case 'CNOT': return applyMatrix(s, op.q2, MATRICES.X, bitOf(s.n, op.q));
     case 'CZ': return applyMatrix(s, op.q2, MATRICES.Z, bitOf(s.n, op.q));
     case 'SWAP': return applySwap(s, op.q, op.q2);
+    case 'RX': case 'RY': case 'RZ':
+      if (typeof op.theta !== 'number' || !Number.isFinite(op.theta)) throw new Error(`${op.g} için açı gerekli`);
+      return applyMatrix(s, op.q, rotationMatrix(op.g, op.theta));
     default: {
       const m = MATRICES[op.g];
       if (!m) throw new Error(`Bilinmeyen kapı: ${op.g}`);
@@ -195,13 +231,14 @@ export function formatState(s, eps = 1e-6) {
     if (r * r + m * m < eps) continue;
     parts.push(`${formatComplex(r, m)}${ketLabel(i, s.n)}`);
   }
-  return parts.join(' + ').replace(/\+ -/g, '− ') || '0';
+  return parts.join(' + ').replace(/\+ −(?=[\d.])/g, '− ') || '0';
 }
 
 export function formatComplex(r, m) {
-  const f = (x) => (Math.abs(x) < 1e-9 ? 0 : +x.toFixed(3));
+  const f = (x) => (Math.abs(x) < 5e-4 ? 0 : +x.toFixed(3));
+  const num = (x) => (x < 0 ? `−${-x}` : `${x}`);
   const a = f(r), b = f(m);
-  if (b === 0) return `${a}`;
-  if (a === 0) return `${b}i`;
-  return `(${a}${b < 0 ? '−' : '+'}${Math.abs(b)}i)`;
+  if (b === 0) return num(a);
+  if (a === 0) return `${num(b)}i`;
+  return `(${num(a)}${b < 0 ? '−' : '+'}${Math.abs(b)}i)`;
 }

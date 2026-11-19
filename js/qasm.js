@@ -2,9 +2,11 @@
 // Kapı adları IBM Qiskit, Amazon Braket, Cirq vb. araçlardaki standart adlardır.
 // Not: Dolanık'ta q[0] ket yazımında EN SOLDAKİ bittir; Qiskit gibi araçlar
 // q[0]'ı en sağa yazar. Devre aynıdır, yalnızca bit dizilerinin okunuş sırası farklıdır.
-import { sortOps } from './quantum.js';
+import { sortOps, GATES, angleLabel } from './quantum.js';
 
-const TO_QASM = { H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap' };
+const TO_QASM = {
+  H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz',
+};
 const FROM_QASM = Object.fromEntries(Object.entries(TO_QASM).map(([k, v]) => [v, k]));
 // sık görülen eş adlar
 Object.assign(FROM_QASM, { cnot: 'CNOT', CX: 'CNOT' });
@@ -27,7 +29,8 @@ export function toQasm(n, ops, { version = 3, measure = true, comment } = {}) {
       continue;
     }
     const args = op.q2 != null ? `q[${op.q}], q[${op.q2}]` : `q[${op.q}]`;
-    lines.push(`${name} ${args};`);
+    const param = GATES[op.g].param ? `(${angleLabel(op.theta, { ascii: true })})` : '';
+    lines.push(`${name}${param} ${args};`);
   }
   if (measure) lines.push(v3 ? 'c = measure q;' : 'measure q -> c;');
   return lines.join('\n') + '\n';
@@ -51,14 +54,18 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
       continue;
     }
     if (/^(bit|creg)\b/.test(st) || /\bmeasure\b/.test(st) || /^barrier\b/.test(st)) continue;
-    m = st.match(/^(\w+)\s+(\w+)\s*\[\s*(\d+)\s*\](?:\s*,\s*(\w+)\s*\[\s*(\d+)\s*\])?$/);
+    m = st.match(/^(\w+)\s*(?:\(([^)]*)\))?\s+(\w+)\s*\[\s*(\d+)\s*\](?:\s*,\s*(\w+)\s*\[\s*(\d+)\s*\])?$/);
     if (!m) throw new Error(`Anlaşılamayan satır: "${st}"`);
     const g = FROM_QASM[m[1]];
     if (!g) throw new Error(`Desteklenmeyen kapı: ${m[1]} (desteklenen: ${Object.values(TO_QASM).join(', ')})`);
+    const isParam = !!GATES[g].param;
+    if (isParam !== (m[2] != null)) throw new Error(isParam ? `${m[1]} kapısı bir açı ister: ${m[1]}(pi/4) q[0];` : `${m[1]} kapısı açı almaz.`);
+    const theta = isParam ? evalAngle(m[2]) : null;
+    m = [m[0], m[1], m[3], m[4], m[5], m[6]];
     if (m[2] !== reg || (m[4] && m[4] !== reg)) throw new Error(`Bilinmeyen yazmaç: ${m[2]}`);
     const two = g === 'CNOT' || g === 'CZ' || g === 'SWAP';
     if (two !== (m[4] != null)) throw new Error(`${m[1]} kapısına yanlış sayıda kübit verildi.`);
-    gates.push({ g, q: +m[3], ...(two ? { q2: +m[5] } : {}) });
+    gates.push({ g, q: +m[3], ...(two ? { q2: +m[5] } : {}), ...(isParam ? { theta } : {}) });
   }
   if (n == null) throw new Error('Kübit tanımı bulunamadı (qubit[n] q; ya da qreg q[n];).');
   if (n < 1 || n > maxQubits) throw new Error(`En fazla ${maxQubits} kübit destekleniyor (${n} istendi).`);
@@ -77,4 +84,34 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
     ops.push({ ...op, col });
   }
   return { n, ops };
+}
+
+// Açı ifadesini güvenle hesapla: sayılar, pi/π, + − * / ve parantez. eval kullanılmaz.
+export function evalAngle(src) {
+  const toks = src.match(/\d+\.?\d*(?:e[+-]?\d+)?|\.\d+|pi|π|[-+*/()]|\S/gi) || [];
+  let i = 0;
+  const peek = () => toks[i];
+  const fail = () => { throw new Error(`Açı anlaşılamadı: "${src}"`); };
+  function expr() {
+    let v = term();
+    while (peek() === '+' || peek() === '-') v = toks[i++] === '+' ? v + term() : v - term();
+    return v;
+  }
+  function term() {
+    let v = factor();
+    while (peek() === '*' || peek() === '/') v = toks[i++] === '*' ? v * factor() : v / factor();
+    return v;
+  }
+  function factor() {
+    const t = toks[i++];
+    if (t === '-') return -factor();
+    if (t === '+') return factor();
+    if (t === '(') { const v = expr(); if (toks[i++] !== ')') fail(); return v; }
+    if (t && /^(pi|π)$/i.test(t)) return Math.PI;
+    if (t && /^(\d|\.)/.test(t)) return parseFloat(t);
+    return fail();
+  }
+  const v = expr();
+  if (i !== toks.length || !Number.isFinite(v)) fail();
+  return v;
 }

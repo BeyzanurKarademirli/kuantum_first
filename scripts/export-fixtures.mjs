@@ -33,7 +33,7 @@ const rnd = () => {
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
-const ONE = ['H', 'X', 'Y', 'Z', 'S', 'T'];
+const ONE = ['H', 'X', 'Y', 'Z', 'S', 'T', 'RX', 'RY', 'RZ'];
 const TWO = ['CNOT', 'CZ', 'SWAP'];
 for (let k = 0; k < 60; k++) {
   const n = 1 + Math.floor(rnd() * 4);
@@ -46,7 +46,11 @@ for (let k = 0; k < 60; k++) {
       if (q2 >= q) q2++;
       ops.push({ g: TWO[Math.floor(rnd() * 3)], q, q2, col: c });
     } else {
-      ops.push({ g: ONE[Math.floor(rnd() * 6)], q: Math.floor(rnd() * n), col: c });
+      const g = ONE[Math.floor(rnd() * ONE.length)];
+      const op = { g, q: Math.floor(rnd() * n), col: c };
+      // yarısı π/24 katı (okunaklı), yarısı keyfi açı
+      if (g.startsWith('R')) op.theta = rnd() < 0.5 ? Math.round(rnd() * 48 - 24) * Math.PI / 24 : rnd() * 8 - 4;
+      ops.push(op);
     }
   }
   add(`rastgele:${k}`, n, ops);

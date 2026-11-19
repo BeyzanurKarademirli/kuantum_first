@@ -61,6 +61,8 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
 .levels button.on { background: var(--bg2); border-color: var(--line); }
 .levels button .st { color: var(--warn); font-size: 12px; white-space: nowrap; }
 .levels button .num { color: var(--ink-dim); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.levels h4 { margin: 10px 8px 2px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent2); }
+.levels h4:first-child { margin-top: 0; }
 .side h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-dim); margin: 4px 8px 8px; }
 .qcount { display: flex; gap: 6px; margin: 0 8px 12px; }
 .qcount button.on { border-color: var(--accent); }
@@ -78,6 +80,9 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
 }
 .gate.two { background: color-mix(in srgb, var(--accent) 14%, var(--bg2)); font-size: 14px; }
 .gate.sel { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 50%, transparent); }
+.angle { display: flex; align-items: center; gap: 4px; font: 600 15px ui-monospace, monospace; color: var(--ink); margin-left: 4px; }
+.angle.dim { opacity: .55; }
+.angle select { font: 14px ui-monospace, monospace; color: var(--ink); background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
 .gate-desc { color: var(--ink-dim); font-size: 13px; min-height: 2.6em; margin: 8px 0; }
 
 .circuit-wrap { overflow-x: auto; padding-bottom: 4px; }
@@ -96,6 +101,7 @@ h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
 #circuit .future { opacity: .3; }
 #circuit .oracle { fill: color-mix(in srgb, var(--ink) 82%, var(--bg)); stroke: var(--accent2); stroke-width: 2; }
 #circuit .otext { fill: var(--bg); font: italic 700 16px Georgia, serif; pointer-events: none; }
+#circuit .gangle { fill: var(--ink-dim); font: 600 10px ui-monospace, monospace; pointer-events: none; }
 #circuit .disabled { fill: color-mix(in srgb, var(--ink-dim) 8%, transparent); }
 
 .controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
@@ -174,4 +180,5 @@ body.mode-help .layout { grid-template-columns: 220px minmax(0, 1fr); }
   .levels { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .levels button { flex: none; }
   .levels button .ttl { display: none; }
+  .levels h4 { align-self: center; margin: 0 2px 0 8px; writing-mode: horizontal-tb; white-space: nowrap; }
 }

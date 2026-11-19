@@ -1,5 +1,5 @@
 // Her bölüm için örnek bir ideal çözüm. Testler ve Qiskit doğrulaması kullanır.
-// Biçim: [kapı, kübit, ikinci kübit?, sütun?]. Sütun verilmezse sırayla 0, 1, 2…
+// Biçim: [kapı, kübit, ikinci kübit?, sütun?, açı?]. Sütun verilmezse sırayla 0, 1, 2…
 export const SOLUTIONS = {
   'bit-cevir': [['X', 0]],
   superpozisyon: [['H', 0]],
@@ -27,10 +27,25 @@ export const SOLUTIONS = {
     ['X', 0, null, 5], ['X', 1, null, 5],
     ['H', 0, null, 6], ['H', 1, null, 6],
   ],
+  'ceyrek-sans': [['RY', 0, null, 0, Math.PI / 3]],
+  'altida-bir': [['H', 0], ['RZ', 0, null, 1, Math.PI / 3]],
+  'yarim-dolanik': [['RY', 0, null, 0, Math.PI / 3], ['CNOT', 0, 1]],
+  // kehanet sütunu: 2
+  'bernstein-vazirani': [
+    ['X', 2, null, 0], ['H', 0, null, 1], ['H', 1, null, 1], ['H', 2, null, 1],
+    ['H', 0, null, 3], ['H', 1, null, 3],
+  ],
+  // mesaj kutusu: sütun 2, yalnız q0
+  'super-yogun': [['H', 0, null, 0], ['CNOT', 0, 1, 1], ['CNOT', 0, 1, 3], ['H', 0, null, 4]],
+  // ψ kutusu: sütun 0, yalnız q0
+  isinlanma: [
+    ['H', 1, null, 1], ['CNOT', 1, 2, 2], ['CNOT', 0, 1, 3], ['H', 0, null, 4],
+    ['CNOT', 1, 2, 5], ['CZ', 0, 2, 6],
+  ],
 };
 
 export function solutionOps(id) {
-  return SOLUTIONS[id].map(([g, q, q2, col], i) => ({
-    g, q, ...(q2 != null ? { q2 } : {}), col: col ?? i,
+  return SOLUTIONS[id].map(([g, q, q2, col, theta], i) => ({
+    g, q, ...(q2 != null ? { q2 } : {}), col: col ?? i, ...(theta != null ? { theta } : {}),
   }));
 }

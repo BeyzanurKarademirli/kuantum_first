@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   zeroState, runCircuit, probabilities, fidelity, blochVector, stateFromAmplitudes,
-  entanglementEntropy, measureShots, formatState, GATES,
+  entanglementEntropy, measureShots, formatState, GATES, angleLabel,
 } from '../js/quantum.js';
 import { LEVELS } from '../js/levels.js';
-import { evaluateLevel, lockedOps, starsFor } from '../js/game.js';
+import { evaluateLevel, lockedOps, starsFor, placementAllowed } from '../js/game.js';
 import { solutionOps } from './solutions.mjs';
 
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
@@ -74,8 +74,8 @@ for (const lv of LEVELS) {
     for (const op of ops.filter((o) => !o.locked)) {
       assert.ok(lv.gates.includes(op.g), `${op.g} bu bölümde izinli`);
       assert.ok(GATES[op.g]);
-      const rows = lv.allowedRows?.[op.g];
-      if (rows) assert.ok(rows.includes(op.q));
+      assert.ok(placementAllowed(lv, op), `${op.g} q${op.q} yerleşimi izinli`);
+      if (GATES[op.g].param) assert.ok(Number.isFinite(op.theta), 'açı var');
       assert.ok(op.col < 8, 'sütun sınırı');
       if (lv.oracle) assert.notEqual(op.col, lv.oracle.col, 'kehanet sütunu dolu');
     }
@@ -90,6 +90,32 @@ test('kehanet: kehanetsiz devre bütün varyantları çözmez', () => {
     const r = evaluateLevel(lv, lockedOps(lv));
     assert.ok(!r.solved, lv.id);
   }
+});
+
+test('ışınlanma: 3 CNOT ile q0↔q2 takası yasak', () => {
+  const lv = LEVELS.find((l) => l.id === 'isinlanma');
+  assert.ok(!placementAllowed(lv, { g: 'CNOT', q: 0, q2: 2 }));
+  assert.ok(!placementAllowed(lv, { g: 'CNOT', q: 2, q2: 0 }));
+  assert.ok(placementAllowed(lv, { g: 'CZ', q: 0, q2: 2 }));
+  assert.ok(placementAllowed(lv, { g: 'CNOT', q: 2, q2: 1 }));
+});
+
+test('döndürme kapıları: Rx(π) = −iX, Ry(π/2)|0⟩ = |+⟩, Rz yalnız faz', () => {
+  const rx = runCircuit(1, [{ g: 'RX', q: 0, theta: Math.PI, col: 0 }]);
+  close(rx.im[1], -1);
+  const ry = runCircuit(1, [{ g: 'RY', q: 0, theta: Math.PI / 2, col: 0 }]);
+  close(fidelity(ry, stateFromAmplitudes(1, [1, 1])), 1);
+  const rz = runCircuit(1, [{ g: 'H', q: 0, col: 0 }, { g: 'RZ', q: 0, theta: 1.234, col: 1 }]);
+  close(probabilities(rz)[0], 0.5);
+  assert.throws(() => runCircuit(1, [{ g: 'RY', q: 0, col: 0 }]), /açı/);
+});
+
+test('açı etiketleri', () => {
+  assert.equal(angleLabel(Math.PI / 4), 'π/4');
+  assert.equal(angleLabel(-2 * Math.PI / 3), '−2π/3');
+  assert.equal(angleLabel(Math.PI), 'π');
+  assert.equal(angleLabel(3 * Math.PI / 4, { ascii: true }), '3*pi/4');
+  assert.equal(angleLabel(0.3, { ascii: true }), '0.3');
 });
 
 test('bölüm kimlikleri benzersiz', () => {

@@ -1,11 +1,14 @@
 // Bölümler. Hedefler genlik dizileri olarak verilir; normalize edilir.
 // Her bölüm: n kübit, izin verilen kapılar, hedef durum, "par" (ideal kapı sayısı).
 // allowedRows: { X: [0] } → X kapısı yalnızca kübit 0'a konabilir.
+// allowedPairs: { CNOT: [[0, 1]] } → iki kübitli kapı yalnızca bu çiftlere (yön fark etmez).
 
 const i = [0, 1];
 const e4 = [Math.SQRT1_2, Math.SQRT1_2]; // e^{iπ/4}
+const e3 = [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3)]; // e^{iπ/3}
+const r3 = Math.sqrt(3) / 2;
 
-export const LEVELS = [
+const RAW = [
   {
     id: 'bit-cevir',
     title: 'Bit Çevir',
@@ -125,4 +128,61 @@ export const LEVELS = [
     hint: 'Önce eşit süperpozisyon. Kehanetten sonra "ortalama etrafında yansıtma" (difüzyon): H H, X X, CZ, X X, H H.',
     n: 2, gates: ['H', 'X', 'CZ'], oracle: { kind: 'grover', col: 1 }, par: 11,
   },
+  {
+    id: 'ceyrek-sans',
+    title: 'Çeyrek Şans',
+    story: 'Hadamard hep yarı yarıya verir. Ama ya ölçümde %25 ihtimalle 1 görmek istersen? Hedef: (√3/2)|0⟩ + (1/2)|1⟩. Ry kapısı kübiti Bloch küresinde istediğin açıyla eğer.',
+    hint: 'Ry(θ) sonrası 1 olasılığı sin²(θ/2). sin²(θ/2) = 1/4 için θ = ?',
+    n: 1, gates: ['RY', 'H', 'X'], target: [r3, 0.5], par: 1,
+  },
+  {
+    id: 'altida-bir',
+    title: 'Altıda Bir Tur',
+    story: '(|0⟩ + e^{iπ/3}|1⟩)/√2: ekvatorda 60° dön. S (90°) ve T (45°) bu açıyı veremez; Rz verebilir. Rz\'nin |0⟩\'a da faz eklediğini fark edeceksin: ama ortak (global) faz fiziksel olarak görünmez.',
+    hint: 'Önce ekvatora çık, sonra Z ekseni etrafında dön.',
+    n: 1, gates: ['H', 'RZ', 'S', 'T'], target: [1, e3], par: 2,
+  },
+  {
+    id: 'yarim-dolanik',
+    title: 'Yarım Gönüllü Dolanıklık',
+    story: '(√3/2)|00⟩ + (1/2)|11⟩: kübitler yine hep aynı sonucu verir ama artık eşit şansla değil. Dolanıklık bir açma-kapama düğmesi değil, bir kaydırıcıdır: Bloch oklarının yarı yarıya kısaldığını gör.',
+    hint: 'Bell çiftindeki H yerine eğik bir Ry kullan.',
+    n: 2, gates: ['RY', 'H', 'CNOT'], target: [r3, 0, 0, 0.5], par: 2,
+  },
+  {
+    id: 'bernstein-vazirani',
+    title: 'Bernstein–Vazirani',
+    story: 'U_s kutusu iki bitlik gizli bir s dizisi saklıyor ve f(x) = s·x (mod 2) hesaplıyor. Klasik olarak s\'nin her bitini bulmak için ayrı bir sorgu gerekir. Kuantumda tek sorgu yeter: devrenin sonunda q0q1 doğrudan s\'yi göstermeli. q2 yardımcı kübittir.',
+    hint: 'Deutsch\'taki numaranın aynısı: yardımcı kübit |−⟩, girdiler süperpozisyonda, sonra girdilere tekrar H.',
+    n: 3, gates: ['H', 'X'], oracle: { kind: 'bv', col: 2 }, par: 6,
+  },
+  {
+    id: 'super-yogun',
+    title: 'Süper Yoğun Kodlama',
+    story: 'Ayşe ile Bora bir Bell çifti paylaşıyor: q0 Ayşe\'de, q1 Bora\'da. Ayşe kendi kübitine kilitli M kutusuyla iki bitlik bir mesaj kodluyor ve kübitini Bora\'ya yolluyor. Tek bir kübitle iki klasik bit! Önce çifti kur, sonra Bora olarak mesajı çöz: sonunda |b1 b2⟩ ölçülmeli.',
+    hint: 'Kutudan önce Bell çifti kur. Kutudan sonra Bell çiftini tersine çöz: aynı kapılar, ters sırada.',
+    n: 2, gates: ['H', 'CNOT'], oracle: { kind: 'dense', col: 2 }, par: 4,
+  },
+  {
+    id: 'isinlanma',
+    title: 'Kuantum Işınlanma',
+    story: 'q0, ψ kutusunda bilinmeyen bir duruma hazırlanıyor. Görevin bu durumu q2\'ye taşımak. Ama q0 ile q2 birbirinden uzak: aralarında CNOT kullanamazsın. Ortadaki q1 ile dolanıklık kurup köprü yap. Gerçek protokolde Ayşe ölçer ve Bora\'ya iki klasik bit yollar; burada o düzeltmeleri kontrollü kapılarla yapıyoruz (ertelenmiş ölçüm ilkesi). q0→q2 arasındaki CZ, o klasik bitlerden birinin yerini tutar.',
+    hint: 'q1–q2 arasında Bell çifti; sonra q0 ile q1\'i "Bell tabanında" ölç: CNOT 0→1 ve H q0. Son olarak q1 kontrollü X ve q0 kontrollü Z ile q2\'yi düzelt.',
+    n: 3, gates: ['H', 'CNOT', 'CZ'], oracle: { kind: 'teleport', col: 0 }, par: 6,
+    allowedPairs: { CNOT: [[0, 1], [1, 2]] },
+  },
 ];
+
+const CHAPTERS = [
+  ['Temeller', ['bit-cevir', 'superpozisyon', 'eksi-dunya', 'hayali-yon', 'sekizde-bir', 'girisim']],
+  ['Dolanıklık', ['bell', 'hadamard-yagmuru', 'kardes-bitler', 'hayali-bell', 'gizli-faz', 'singlet', 'ghz', 'takasci', 'faz-labirenti']],
+  ['Döndürmeler', ['ceyrek-sans', 'altida-bir', 'yarim-dolanik']],
+  ['Algoritmalar', ['deutsch', 'bernstein-vazirani', 'grover', 'super-yogun', 'isinlanma']],
+];
+
+const byId = Object.fromEntries(RAW.map((l) => [l.id, l]));
+export const LEVELS = CHAPTERS.flatMap(([chapter, ids]) => ids.map((id) => {
+  if (!byId[id]) throw new Error(`Bölüm bulunamadı: ${id}`);
+  return { ...byId[id], chapter };
+}));
+if (LEVELS.length !== RAW.length) throw new Error('Her bölüm bir kısma atanmalı');

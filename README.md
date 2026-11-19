@@ -8,14 +8,16 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 ## Neler var?
 
-- **17 bölüm** — tek bit çevirmekten Bell çiftine, GHZ üçlüsüne, singlet durumuna ve
-  "X kapısı sadece üst kübite takılabiliyor" gibi kısıtlı bulmacalara kadar.
-  Her bölüm ideal kapı sayısına göre ★ ile puanlanır.
-- **Gerçek algoritmalar** — *Deutsch* ve *Grover* bölümlerinde kilitli bir kehanet (oracle) kutusu var;
-  devren kutunun her olası halinde doğru sonucu vermeli.
+- **4 kısımda 23 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*. Tek bit çevirmekten
+  Bell çiftine, GHZ üçlüsüne, singlet durumuna ve "X kapısı sadece üst kübite takılabiliyor" gibi
+  kısıtlı bulmacalara kadar. Her bölüm ideal kapı sayısına göre ★ ile puanlanır.
+- **Gerçek algoritmalar ve protokoller** — *Deutsch*, *Bernstein–Vazirani*, *Grover*,
+  *süper yoğun kodlama* ve *kuantum ışınlanma*. İçi görünmeyen kilitli kutular (kehanet, mesaj,
+  bilinmeyen durum) var; devren kutunun her olası halinde doğru çalışmalı.
+- **12 kapı** — H, X, Y, Z, S, T, CNOT, CZ, SWAP ve açılı döndürmeler Rx(θ), Ry(θ), Rz(θ).
 - **OpenQASM 2.0 / 3.0** — devreni endüstri standardı dile aktar, IBM Quantum, Qiskit, Cirq ya da
   Amazon Braket'te (gerçek donanım dahil) çalıştır. Başka yerde yazılmış QASM kodunu içe aktar.
-- **Serbest Laboratuvar** — 4 kübite kadar, 9 kapı (H, X, Y, Z, S, T, CNOT, CZ, SWAP).
+- **Serbest Laboratuvar** — 4 kübite kadar, 12 sütun, bütün kapılar.
   Devreni bağlantı olarak paylaşabilirsin (URL'de saklanır).
 - **Genlik çemberleri** — boyut = genlik büyüklüğü, renk ve ibre = faz.
 - **Bloch küreleri** — her kübitin indirgenmiş durumu. Ok kısalıyorsa kübit dolanıktır;
@@ -45,7 +47,7 @@ npm test
 
 **Qiskit çapraz doğrulaması:** Her push'ta CI, bütün bölüm çözümlerini (kehanet varyantları dahil) ve
 60 tohumlu rastgele devreyi OpenQASM 2 ve 3 olarak IBM Qiskit'e yükler; Qiskit'in durum vektörünü
-Dolanık'ınkiyle karşılaştırır (166/166 birebir uyum). Yerelde:
+Dolanık'ınkiyle karşılaştırır (196/196 birebir uyum, keyfi açılı döndürmeler dahil). Yerelde:
 
 ```bash
 pip install -r tests/qiskit/requirements.txt
@@ -84,11 +86,13 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 
 ## Yol haritası
 
-- [ ] Rotasyon kapıları (Rx, Ry, Rz) ve W durumu bölümü
+- [x] Döndürme kapıları (Rx, Ry, Rz) ve bunlara dayalı bölümler
+- [ ] W durumu ve serbest açı girişi
 - [x] Algoritma bölümleri: Deutsch, Grover (2 kübit)
 - [x] OpenQASM 2/3 dışa-içe aktarma
 - [x] Qiskit ile otomatik çapraz doğrulama
-- [ ] Bernstein–Vazirani, kuantum ışınlanma, süper yoğun kodlama
+- [x] Bernstein–Vazirani, kuantum ışınlanma, süper yoğun kodlama
+- [ ] Kuantum Fourier dönüşümü ve faz kestirimi
 - [ ] Orta-devre ölçümü ve klasik kontrol
 - [ ] Gürültü modu: dekoherans kürenin içine nasıl çeker?
 - [ ] İngilizce dil seçeneği

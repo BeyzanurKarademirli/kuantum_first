@@ -1,12 +1,12 @@
 import {
-  GATES, runCircuit, zeroState, cloneState, stateFromAmplitudes, blochVector,
+  GATES, ANGLES, angleLabel, runCircuit, zeroState, cloneState, stateFromAmplitudes, blochVector,
   entanglementEntropy, measureShots, sample, formatState, ketLabel,
 } from './quantum.js';
 import { LEVELS } from './levels.js';
 import { drawAmplitudes, drawBloch, lerpState } from './viz.js';
 import { playState, click } from './audio.js';
 import {
-  evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor,
+  evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor, placementAllowed,
 } from './game.js';
 import { toQasm, fromQasm } from './qasm.js';
 
@@ -35,6 +35,7 @@ const ui = {
   won: false,
   lastHit: null,
   variant: 0,
+  theta: Math.PI / 4,
 };
 
 const level = () => LEVELS[ui.levelIdx];
@@ -51,7 +52,6 @@ function toast(msg) {
 
 // ---------- devre modeli ----------
 function span(op) {
-  if (op.g === 'ORACLE') return [0, nQubits() - 1];
   const a = op.q, b = op.q2 ?? op.q;
   return [Math.min(a, b), Math.max(a, b)];
 }
@@ -67,10 +67,10 @@ function rangeFree(col, a, b) {
   for (let r = lo; r <= hi; r++) if (occupant(col, r)) return false;
   return true;
 }
-function rowAllowed(g, row) {
-  const rows = ui.mode === 'level' ? level().allowedRows?.[g] : null;
-  return !rows || rows.includes(row);
+function allowed(op) {
+  return ui.mode !== 'level' || placementAllowed(level(), op);
 }
+const gateText = (op) => (GATES[op.g].param ? `${GATES[op.g].label}(${angleLabel(op.theta)})` : op.g);
 function commit(newOps) {
   ui.history.push(ui.ops);
   if (ui.history.length > 100) ui.history.shift();
@@ -83,23 +83,26 @@ function onCell(col, row) {
   const p = ui.pending;
   if (p) {
     ui.pending = null;
-    if (col === p.col && row !== p.q && rangeFree(col, p.q, row) && rowAllowed(p.g, row)) {
+    const op = { g: p.g, q: p.q, q2: row, col };
+    if (col === p.col && row !== p.q && rangeFree(col, p.q, row) && allowed(op)) {
       click(880);
       setDesc();
-      commit([...ui.ops, { g: p.g, q: p.q, q2: row, col }]);
+      commit([...ui.ops, op]);
     } else {
-      toast('İkinci kübit aynı sütunda, boş bir hücrede olmalı.');
+      toast(col === p.col && row !== p.q && rangeFree(col, p.q, row)
+        ? `${GATES[p.g].name} bu bölümde bu iki kübit arasına konamaz.`
+        : 'İkinci kübit aynı sütunda, boş bir hücrede olmalı.');
       setDesc();
       renderCircuit();
     }
     return;
   }
   const occ = occupant(col, row);
-  if (occ?.locked) { toast('Kehanet kutusu kilitli: içini göremezsin, yalnızca bir kez sorgulayabilirsin.'); return; }
+  if (occ?.locked) { toast('Bu kutu kilitli: içini göremezsin, yalnızca devrende kullanabilirsin.'); return; }
   if (occ) { click(330); commit(ui.ops.filter((o) => o !== occ)); return; }
   const g = ui.selected;
   if (!g) { toast('Önce yukarıdan bir kapı seç.'); return; }
-  if (!rowAllowed(g, row)) { toast(`${GATES[g].name} bu bölümde yalnızca belirli kübitlere takılabilir.`); return; }
+  if (!allowed({ g, q: row })) { toast(`${GATES[g].name} bu bölümde yalnızca belirli kübitlere takılabilir.`); return; }
   if (GATES[g].arity === 2) {
     if (nQubits() < 2) { toast('Bu kapı için en az iki kübit gerekir.'); return; }
     ui.pending = { g, q: row, col };
@@ -108,7 +111,7 @@ function onCell(col, row) {
     return;
   }
   click(660);
-  commit([...ui.ops, { g, q: row, col }]);
+  commit([...ui.ops, { g, q: row, col, ...(GATES[g].param ? { theta: ui.theta } : {}) }]);
 }
 
 // ---------- çizim ----------
@@ -142,15 +145,16 @@ function renderCircuit() {
   // yerleşim kısıtı olan satırları soluklaştır
   if (ui.selected && ui.mode === 'level' && level().allowedRows?.[ui.selected]) {
     for (let r = 0; r < n; r++) {
-      if (!rowAllowed(ui.selected, r)) el('rect', { class: 'disabled', x: LW, y: 4 + r * CH, width: COLS * CW, height: CH }, svg);
+      if (!allowed({ g: ui.selected, q: r })) el('rect', { class: 'disabled', x: LW, y: 4 + r * CH, width: COLS * CW, height: CH }, svg);
     }
   }
   for (const op of ui.ops) {
     const g = el('g', op.col >= ui.step ? { class: 'future' } : {}, svg);
     const x = cx(op.col);
     if (op.g === 'ORACLE') {
-      el('rect', { class: 'oracle', x: x - 22, y: 10, width: 44, height: n * CH - 12, rx: 10 }, g);
-      const t = el('text', { class: 'otext', x, y: 4 + (n * CH) / 2 + 5, 'text-anchor': 'middle' }, g);
+      const [lo, hi] = span(op);
+      el('rect', { class: 'oracle', x: x - 22, y: 4 + lo * CH + 6, width: 44, height: (hi - lo + 1) * CH - 12, rx: 10 }, g);
+      const t = el('text', { class: 'otext', x, y: 4 + ((lo + hi + 1) * CH) / 2 + 5, 'text-anchor': 'middle' }, g);
       t.textContent = oracleOf(level()).label;
       continue;
     }
@@ -171,9 +175,16 @@ function renderCircuit() {
         }
       }
     } else {
-      el('rect', { class: 'gbox', x: x - 19, y: cy(op.q) - 19, width: 38, height: 38, rx: 8 }, g);
-      const t = el('text', { class: 'gtext', x, y: cy(op.q) + 6, 'text-anchor': 'middle' }, g);
-      t.textContent = op.g;
+      el('rect', { class: 'gbox', x: x - 21, y: cy(op.q) - 21, width: 42, height: 42, rx: 8 }, g);
+      if (GATES[op.g].param) {
+        const t = el('text', { class: 'gtext', x, y: cy(op.q) + 1, 'text-anchor': 'middle' }, g);
+        t.textContent = GATES[op.g].label;
+        const a = el('text', { class: 'gangle', x, y: cy(op.q) + 15, 'text-anchor': 'middle' }, g);
+        a.textContent = angleLabel(op.theta);
+      } else {
+        const t = el('text', { class: 'gtext', x, y: cy(op.q) + 6, 'text-anchor': 'middle' }, g);
+        t.textContent = op.g;
+      }
     }
   }
   if (ui.pending) {
@@ -183,7 +194,7 @@ function renderCircuit() {
     for (let r = 0; r < n; r++) {
       const rect = el('rect', { class: 'cell', x: LW + c * CW, y: 4 + r * CH, width: CW, height: CH, tabindex: 0 }, svg);
       const occ = occupant(c, r);
-      const what = occ?.locked ? ': kilitli kehanet kutusu' : occ ? `: ${occ.g} (silmek için tıkla)` : '';
+      const what = occ?.locked ? ': kilitli gizli kutu' : occ ? `: ${gateText(occ)} (silmek için tıkla)` : '';
       rect.setAttribute('aria-label', `sütun ${c + 1}, kübit ${r}${what}`);
       rect.addEventListener('click', () => onCell(c, r));
       rect.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCell(c, r); } });
@@ -198,9 +209,30 @@ function renderPalette() {
     const b = document.createElement('button');
     b.className = `gate${GATES[g].arity === 2 ? ' two' : ''}${ui.selected === g ? ' sel' : ''}`;
     b.textContent = g === 'CNOT' ? 'CNOT' : g === 'SWAP' ? 'SWAP' : GATES[g].label;
+    b.setAttribute('aria-pressed', ui.selected === g);
     b.title = `${GATES[g].name}: ${GATES[g].desc}`;
     b.addEventListener('click', () => selectGate(g));
     pal.appendChild(b);
+  }
+  if (gateList().some((g) => GATES[g].param)) {
+    const lab = document.createElement('label');
+    lab.className = `angle${GATES[ui.selected]?.param ? '' : ' dim'}`;
+    lab.textContent = 'θ = ';
+    const sel = document.createElement('select');
+    sel.setAttribute('aria-label', 'Döndürme açısı');
+    for (const a of ANGLES) {
+      const o = document.createElement('option');
+      o.value = a;
+      o.textContent = angleLabel(a);
+      if (Math.abs(a - ui.theta) < 1e-12) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.addEventListener('change', () => {
+      ui.theta = +sel.value;
+      if (!GATES[ui.selected]?.param) selectGate(gateList().find((g) => GATES[g].param));
+    });
+    lab.appendChild(sel);
+    pal.appendChild(lab);
   }
 }
 
@@ -251,6 +283,11 @@ function renderSide() {
     const list = document.createElement('div');
     list.className = 'levels';
     LEVELS.forEach((lv, i) => {
+      if (lv.chapter !== LEVELS[i - 1]?.chapter) {
+        const h = document.createElement('h4');
+        h.textContent = lv.chapter;
+        list.appendChild(h);
+      }
       const b = document.createElement('button');
       if (i === ui.levelIdx && ui.mode === 'level') b.className = 'on';
       const stars = ui.progress[lv.id] || 0;
@@ -260,6 +297,11 @@ function renderSide() {
       list.appendChild(b);
     });
     card.appendChild(list);
+    // mobilde liste yatay kayar: seçili bölümü görünür yap (sayfayı dikey kaydırmadan)
+    requestAnimationFrame(() => {
+      const on = list.querySelector('button.on');
+      if (on && list.scrollWidth > list.clientWidth) list.scrollLeft = on.offsetLeft - list.clientWidth / 2 + on.clientWidth / 2;
+    });
     const total = Object.values(ui.progress).reduce((a, b) => a + b, 0);
     const p = document.createElement('p');
     p.className = 'fine';
@@ -277,7 +319,7 @@ function renderStory() {
   if (ui.mode === 'help') { renderHelp(st); return; }
   if (ui.mode === 'sandbox') {
     h.textContent = 'Serbest Laboratuvar';
-    p.textContent = 'Kural yok. Dokuz kapı, dört kübite kadar. Bir GHZ durumu kur ve dinle; ya da tüm fazları döndürüp renk tekerleğini gez.';
+    p.textContent = 'Kural yok. On iki kapı, dört kübite kadar, on iki sütun. Bir GHZ durumu kur ve dinle; Ry ile olasılıkları ayarla; ya da Rz ile fazları döndürüp renk tekerleğini gez.';
     st.append(h, p);
     return;
   }
@@ -287,7 +329,7 @@ function renderStory() {
   const meta = document.createElement('p');
   meta.className = 'hint';
   meta.textContent = lv.oracle
-    ? `Kehanet kutusu ${lv.oracle.col + 1}. sütunda kilitli · ideal: ${lv.par} kapı`
+    ? `Gizli kutu ${lv.oracle.col + 1}. sütunda kilitli · ideal: ${lv.par} kapı`
     : `Hedef: ${formatState(ui.target)} · ideal: ${lv.par} kapı`;
   const det = document.createElement('details');
   det.innerHTML = '<summary>İpucu</summary>';
@@ -315,8 +357,10 @@ function renderHelp(st) {
     <p>Devreyi adım adım oynat: kaydırıcıyı geri çektiğinde o ana kadarki durumu görürsün.</p>
     <h3>Sesli mod</h3>
     <p>Her taban durumu pentatonik bir notadır. Ses şiddeti olasılığı, stereo konumu fazı izler. Süperpozisyon bir akor gibi duyulur, ölçüm tek notaya çöker.</p>
-    <h3>Kehanet kutuları</h3>
-    <p>Son bölümlerde içini göremediğin kilitli bir kutu (kehanet, İng. <i>oracle</i>) var. Deutsch ve Grover algoritmaları, kutuyu klasik bir bilgisayardan daha az sorgulayarak onun gizli özelliğini bulur. Devren, kutunun her olası halinde doğru çalışmalı. Sağdaki listeden bir kutu seçip devreni o kutuyla izleyebilirsin.</p>
+    <h3>Döndürme kapıları</h3>
+    <p>Rx, Ry ve Rz, kübiti Bloch küresinde bir eksen etrafında istediğin θ açısıyla döndürür. H, X, S, T gibi kapılar aslında bunların özel açılarıdır (global faz farkıyla). Ry ile ölçüm olasılıklarını istediğin orana ayarlayabilirsin: P(1) = sin²(θ/2).</p>
+    <h3>Gizli kutular</h3>
+    <p>Algoritmalar kısmında içini göremediğin kilitli kutular var. <b>Kehanet</b> (İng. <i>oracle</i>) kutuları gizli bir fonksiyonu saklar: Deutsch, Bernstein–Vazirani ve Grover algoritmaları onu klasik bir bilgisayardan daha az sorgulayarak çözer. <b>Mesaj</b> ve <b>ψ</b> kutuları ise sana bilinmeyen bir mesaj ya da durum verir. Her durumda devren kutunun tüm olası hallerinde doğru çalışmalı. Sağdaki listeden bir hal seçip devreni onunla izleyebilirsin.</p>
     <h3>OpenQASM ve gerçek donanım</h3>
     <p><b>⟨/⟩ QASM</b> düğmesi devreni kuantum programlamanın endüstri standardı olan OpenQASM 2/3 diline çevirir. Bu kodu IBM Quantum Platform'un ücretsiz planında ya da Qiskit, Cirq, Amazon Braket gibi araçlarda çalıştırabilirsin. Dolanık'ın simülatörü her güncellemede Qiskit'e karşı otomatik olarak test edilir.</p>
     <h3>Dürüstlük notu</h3>
@@ -397,7 +441,7 @@ function update({ silent = false } = {}) {
     renderVariants(lv, r);
     if (!lv.oracle) drawAmplitudes($('target'), ui.target);
     $('fid').textContent = lv.oracle
-      ? `${r.checks.filter((c) => c.ok).length}/${r.checks.length} kutu çözüldü`
+      ? `${r.checks.filter((c) => c.ok).length}/${r.checks.length} durum çözüldü`
       : `benzerlik ${(r.score * 100).toFixed(1)}%`;
     $('fidBar').style.width = `${(r.score * 100).toFixed(1)}%`;
     if (r.solved && !ui.won && playerGateCount(ui.ops)) { ui.won = true; setTimeout(win, 350); }
@@ -416,12 +460,12 @@ function renderVariants(lv, r) {
   const orc = oracleOf(lv);
   const p = document.createElement('p');
   p.className = 'fine';
-  p.textContent = 'Devren aşağıdaki kutuların hepsinde doğru sonucu vermeli. Birine tıklayıp devreyi o kutuyla izle:';
+  p.textContent = 'Kutunun içi gizli. Devren aşağıdaki olasılıkların hepsinde doğru sonucu vermeli. Birine tıklayıp devreni o haliyle izle:';
   box.appendChild(p);
   orc.variants.forEach((v, i) => {
     const b = document.createElement('button');
     b.className = `chip${i === ui.variant ? ' on' : ''}${r.checks[i].ok ? ' ok' : ''}`;
-    const want = lv.oracle.kind === 'deutsch' ? ` → ${v.kind}: q0 = ${v.expect}` : ` → ölç: ${ketLabel(v.marked, 2)}`;
+    const want = ` → ${v.goal}`;
     b.textContent = `${r.checks[i].ok ? '✓' : '○'} ${v.name}${want}`;
     b.setAttribute('aria-pressed', i === ui.variant);
     b.addEventListener('click', () => { ui.variant = i; update(); });
@@ -493,7 +537,7 @@ function measureMany() {
 
 // ---------- paylaşım (yalnızca laboratuvar) ----------
 function writeHash() {
-  const code = ui.ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}.${o.col}`).join('_');
+  const code = ui.ops.map((o) => `${o.g}.${o.q}${o.q2 != null ? '-' + o.q2 : ''}.${o.col}${o.theta != null ? '@' + +o.theta.toPrecision(12) : ''}`).join('_');
   history.replaceState(null, '', `#lab=${ui.sandboxN}~${code}`);
 }
 function readHash() {
@@ -502,9 +546,11 @@ function readHash() {
   ui.sandboxN = +m[1];
   ui.ops = [];
   for (const part of m[2].split('_').filter(Boolean)) {
-    const pm = part.match(/^([A-Z]+)\.(\d)(?:-(\d))?\.(\d{1,2})$/);
+    const pm = part.match(/^([A-Z]+)\.(\d)(?:-(\d))?\.(\d{1,2})(?:@(-?[\d.]+(?:e-?\d+)?))?$/);
     if (!pm || !GATES[pm[1]]) continue;
+    if (!!GATES[pm[1]].param !== (pm[5] != null)) continue;
     const op = { g: pm[1], q: +pm[2], col: +pm[4] };
+    if (pm[5] != null) op.theta = +pm[5];
     if (pm[3] != null) op.q2 = +pm[3];
     const arityOk = (GATES[op.g].arity === 2) === (op.q2 != null);
     const n = ui.sandboxN;
@@ -522,6 +568,8 @@ function setMode(mode) {
   ui.mode = mode;
   COLS = mode === 'sandbox' ? LAB_COLS : LEVEL_COLS;
   $('step').max = COLS;
+  ui.step = COLS;
+  $('step').value = COLS;
   document.body.className = `mode-${mode}`;
   $('story').classList.remove('help');
   for (const b of document.querySelectorAll('.modes button')) b.classList.toggle('on', b.dataset.mode === mode);
