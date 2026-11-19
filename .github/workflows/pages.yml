@@ -19,8 +19,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: npm test
@@ -29,11 +29,11 @@ jobs:
     name: Qiskit çapraz doğrulama
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -43,18 +43,19 @@ jobs:
       - run: python tests/qiskit/verify.py fixtures.json
 
   deploy:
-    if: github.event_name != 'pull_request'
+    # Ücretsiz planda Pages yalnızca açık depolarda çalışır; depo açılınca kendiliğinden yayınlanır.
+    if: github.event_name != 'pull_request' && !github.event.repository.private
     needs: [test, qiskit]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Yayınlanacak dosyaları topla
         run: mkdir _site && cp -r index.html css js _site/
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - id: deployment
