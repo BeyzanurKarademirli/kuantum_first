@@ -12,6 +12,7 @@ import { toQasm, fromQasm } from './qasm.js';
 import { t, tx, setLang, getLang, detectLang } from './i18n.js';
 import { LEVELS_EN } from './levels-en.js';
 import { startEbru, burst } from './ebru.js';
+import { startField, startTrail, startAtom, startEquations, startSpotlight } from './fx.js';
 import {
   CHANNELS, runNoisy, rhoBloch, rhoProbabilities, purity, rhoFidelity, sampleRho, measureShotsRho,
 } from './noise.js';
@@ -945,6 +946,11 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ui
 // ---------- başlat ----------
 applyStaticText();
 startEbru($('ebru'));
+startField($('field'));
+startTrail($('trail'));
+startAtom($('atom'));
+startEquations($('eqs'));
+startSpotlight();
 document.fonts?.ready.then(() => { moveThumb(); if (ui.mode !== 'help') update({ silent: true }); });
 const fromHash = readHash();
 if (fromHash === 'challenge') {

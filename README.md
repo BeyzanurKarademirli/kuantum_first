@@ -10,6 +10,11 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 ## Tasarım: "Ebru"
 
+**İmleçle etkileşim:** arka plandaki tel ızgara bir "uzay-zaman ağı"dır; imleç onu bir kütle gibi büker,
+tıkladığın yerden ağ boyunca dalga yayılır. Masaüstünde imlecin ardında faz renklerinde bir foton izi kalır.
+Logo, ışık izi bırakan elektronlarıyla canlı bir atomdur ve imlece doğru eğilir. Arka planda gerçek kuantum
+formülleri süzülür ve imleçle paralaks yapar. Kartlar imlecin altında hafifçe aydınlanır, kapı tuşları 3B eğilir.
+
 Arka plandaki akışkan desen süs değil, gerçek bir fizik: üç hareketli dalga kaynağının girişimi,
 oyunun faz renk tekerleğiyle boyanmış (ebru sanatının kuantum hali). Kâğıt-mürekkep paleti,
 yaprak köşeli butonlar, baskı gölgeleri, basınca gömülen kapı tuşları, seçili kapının çevresinde
@@ -91,6 +96,8 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/noise.js` | Yoğunluk matrisi simülatörü ve gürültü kanalları |
 | `js/i18n.js`, `js/strings.js`, `js/levels-en.js` | Çeviri katmanı ve metinler |
 | `js/ebru.js` | Arka plandaki dalga girişimi ve kazanma patlaması |
+| `js/fx.js` | Uzay-zaman ağı, foton izi, ışıldayan atom, denklemler, kart ışığı |
+| `scripts/cache-bust.sh` | Yayında CSS/JS adreslerine sürüm etiketi ekler (eski önbellek sorunu olmaz) |
 | `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
 | `js/audio.js` | Web Audio ile "süperpozisyonu dinle" |

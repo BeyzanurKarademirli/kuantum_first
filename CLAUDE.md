@@ -9,7 +9,9 @@ dil tarayıcıdan algılanır.
 - **Bit sırası:** kübit 0, ket yazımında en soldaki bittir (`|q0 q1 …⟩`). Qiskit tersini kullanır;
   `tests/qiskit/verify.py` bunu `reverse_qargs()` ile düzeltir.
 - `js/quantum.js`, `js/noise.js`, `js/game.js`, `js/qasm.js`, `js/levels.js` DOM'a dokunmaz (Node'da test edilir).
-  DOM kodu yalnızca `js/app.js`, `js/viz.js`, `js/audio.js` ve `js/ebru.js` içindedir.
+  DOM kodu yalnızca `js/app.js`, `js/viz.js`, `js/audio.js`, `js/ebru.js` ve `js/fx.js` içindedir.
+- **Performans:** hareketli arka planın üstündeki öğelerde `backdrop-filter` ya da büyük `filter: blur` kullanma
+  (her karede yeniden hesaplanır). Yeni animasyonlar `prefers-reduced-motion` tercihine uymalı.
 - **Metinler:** arayüze kod içinde düz metin yazma; `js/strings.js`'e her iki dilde anahtar ekle ve `t()` kullan.
   Yeni bölümün İngilizcesini `js/levels-en.js`'e ekle. `tests/i18n.test.mjs` eksikleri yakalar.
 - **Tasarım dili ("Ebru"):** renkleri `:root` değişkenlerinden al (kâğıt/mürekkep, zencefre, kobalt, safran,

@@ -1,5 +1,13 @@
 # Değişiklik günlüğü
 
+## 0.7.0 — 2026-11-19
+- İmleçle etkileşimli efektler: imlecin bir kütle gibi büktüğü uzay-zaman ağı, tıklamayla ağda yayılan
+  dalgalar, faz renklerinde foton izi ve girişim halkaları, ışık izli elektronlarıyla canlı atom logosu,
+  arka planda paralaksla süzülen kuantum denklemleri, kartlarda imleci izleyen ışık, kapı tuşlarında 3B eğilme.
+- Performans: her karede yeniden hesaplanan bulanıklık filtreleri kaldırıldı (yazılımla çizimde 13 → 61 kare/sn).
+- Yayın düzeltmesi: CSS/JS adreslerine commit etiketi eklenir; güncellemeden sonra tarayıcının eski
+  CSS'i önbellekten getirip sayfayı bozması engellendi.
+
 ## 0.6.0 — 2026-11-19
 - Yeni görsel kimlik "Ebru": arka planda canlı dalga girişimi (faz renkleriyle), kâğıt-mürekkep paleti,
   yaprak köşeler ve baskı gölgeleri, mürekkep taşı kapı tuşları, dönen faz halkası, kayan mod göstergesi,

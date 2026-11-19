@@ -53,7 +53,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Yayınlanacak dosyaları topla
-        run: mkdir _site && cp -r index.html css js fonts _site/
+        run: |
+          mkdir _site && cp -r index.html css js fonts _site/
+          scripts/cache-bust.sh _site "${GITHUB_SHA::8}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

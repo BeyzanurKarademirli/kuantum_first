@@ -13,19 +13,13 @@
 </head>
 <body>
   <canvas id="ebru" class="ebru" aria-hidden="true"></canvas>
+  <div id="eqs" class="eqs" aria-hidden="true"></div>
+  <canvas id="field" class="field" aria-hidden="true"></canvas>
   <a class="skip" href="#circuit" data-i18n="circuit.aria">Kuantum devresi</a>
 
   <header class="top">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="mk1" x1="0" x2="1"><stop offset="0" stop-color="var(--vermilion)"/><stop offset="1" stop-color="var(--saffron)"/></linearGradient>
-          <linearGradient id="mk2" x1="0" x2="1"><stop offset="0" stop-color="var(--cobalt)"/><stop offset="1" stop-color="var(--jade)"/></linearGradient>
-        </defs>
-        <ellipse class="orbit o1" cx="32" cy="32" rx="26" ry="11" stroke="url(#mk1)" transform="rotate(35 32 32)"/>
-        <ellipse class="orbit o2" cx="32" cy="32" rx="26" ry="11" stroke="url(#mk2)" transform="rotate(-35 32 32)"/>
-        <circle class="core" cx="32" cy="32" r="4.5"/>
-      </svg>
+      <canvas id="atom" class="mark" width="64" height="64" aria-hidden="true"></canvas>
       <div>
         <h1 class="wordmark">Dolanık</h1>
         <p class="tag" data-i18n="brand.tag">kuantum devre bulmacası</p>
@@ -129,6 +123,7 @@
     </div>
   </dialog>
 
+  <canvas id="trail" class="trail" aria-hidden="true"></canvas>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <footer class="foot" data-i18n="foot"></footer>
