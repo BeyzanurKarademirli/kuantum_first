@@ -1,5 +1,12 @@
 # Değişiklik günlüğü
 
+## 0.9.0 — 2026-11-19
+- İlk ziyarette karşılama ekranı: sitenin amacı, öğretecekleri, ön bilgi gerekmediği.
+- Rehber tur (11 adım): hayalet imleç sayfada gezer, her kısmı ışık halkasıyla vurgular, anlatım
+  balonu açar ve ilk bölümü gerçekten tıklayarak çözer. İleri/geri, klavye (← → Esc), mobilde altta balon.
+  Tur sırasında yıldız verilmez; bitince bölüm temiz başlar. Üstte her zaman "Tur" düğmesi.
+- Düzeltme: mod değişimi gövdedeki diğer sınıfları silmiyor.
+
 ## 0.8.0 — 2026-11-19
 - Arka plan uzaya döndü: koyu temada titreşen yıldızlar, bulutsular ve kayan yıldızlar; açık temada
   takımyıldız çizgili mürekkep yıldız atlası. Süs olarak kullanılan bütün gökkuşağı geçişleri kaldırıldı

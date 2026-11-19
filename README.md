@@ -8,6 +8,11 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 **Oyna:** https://beyzanurkarademirli.github.io/kuantum_first/ · **Türkçe / English**
 
+**Hiç bilmiyorsan:** Siteye ilk girişte kısa bir karşılama ekranı sitenin ne olduğunu anlatır. "Bana göster"
+dersen bir **rehber tur** başlar: hayalet bir imleç ekranda gezer, her kısmı ışıkla vurgulayıp ne işe
+yaradığını anlatır ve ilk bölümü senin gözünün önünde çözer. Turu istediğin an üstteki **Tur** düğmesiyle
+yeniden izleyebilirsin. Her kısmın yanındaki **?** düğmesi de o kısmı tek cümlede açıklar.
+
 ## Tasarım: "Uzay atlası"
 
 Koyu temada derin uzay: titreşen yıldızlar (imleçle paralaks yapan üç derinlik katmanı), bulutsular ve
@@ -97,6 +102,7 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/i18n.js`, `js/strings.js`, `js/levels-en.js` | Çeviri katmanı ve metinler |
 | `js/space.js` | Uzay arka planı: yıldızlar, bulutsular, kayan yıldızlar, açık temada yıldız atlası |
 | `js/burst.js` | Kazanınca yıldız kıvılcımı patlaması |
+| `js/tour.js` | Karşılama sonrası rehber tur: hayalet imleç, ışık halkası, anlatım balonları |
 | `js/fx.js` | Uzay-zaman ağı, kuantum sembolü izi, ışıldayan atom, denklemler, kart ışığı |
 | `scripts/cache-bust.sh` | Yayında CSS/JS adreslerine sürüm etiketi ekler (eski önbellek sorunu olmaz) |
 | `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |

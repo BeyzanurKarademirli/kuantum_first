@@ -9,7 +9,9 @@ dil tarayıcıdan algılanır.
 - **Bit sırası:** kübit 0, ket yazımında en soldaki bittir (`|q0 q1 …⟩`). Qiskit tersini kullanır;
   `tests/qiskit/verify.py` bunu `reverse_qargs()` ile düzeltir.
 - `js/quantum.js`, `js/noise.js`, `js/game.js`, `js/qasm.js`, `js/levels.js` DOM'a dokunmaz (Node'da test edilir).
-  DOM kodu yalnızca `js/app.js`, `js/viz.js`, `js/audio.js`, `js/space.js`, `js/burst.js` ve `js/fx.js` içindedir.
+  DOM kodu yalnızca `js/app.js`, `js/viz.js`, `js/audio.js`, `js/space.js`, `js/burst.js`, `js/fx.js` ve `js/tour.js` içindedir.
+- **Rehber tur:** arayüzde bir kısmı taşır ya da yeniden adlandırırsan `js/tour.js` içindeki `STEPS` seçicilerini
+  ve `tour.*` metinlerini güncelle; turun 11 adımı Playwright ile uçtan uca denenmeli.
 - **Performans:** hareketli arka planın üstündeki öğelerde `backdrop-filter` ya da büyük `filter: blur` kullanma
   (her karede yeniden hesaplanır). Yeni animasyonlar `prefers-reduced-motion` tercihine uymalı.
 - **Metinler:** arayüze kod içinde düz metin yazma; `js/strings.js`'e her iki dilde anahtar ekle ve `t()` kullan.

@@ -193,10 +193,11 @@ export function startTrail(canvas) {
 // ---------------------------------------------------------------- 3
 export function startAtom(canvas) {
   const ctx = canvas.getContext('2d');
-  const S = 64;
+  const S = 64; // çizim koordinatları; tuvalin gerçek boyutuna ölçeklenir
+  const px = +canvas.getAttribute('width') || 64;
   const dpr = Math.min(2, devicePixelRatio || 1);
-  canvas.width = S * dpr; canvas.height = S * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width = px * dpr; canvas.height = px * dpr;
+  ctx.setTransform(dpr * px / S, 0, 0, dpr * px / S, 0, 0);
   let hover = 0, hoverT = 0;
   canvas.addEventListener('pointerenter', () => { hoverT = 1; });
   canvas.addEventListener('pointerleave', () => { hoverT = 0; });

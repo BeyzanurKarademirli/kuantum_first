@@ -13,6 +13,7 @@ import { t, tx, setLang, getLang, detectLang } from './i18n.js';
 import { LEVELS_EN } from './levels-en.js';
 import { startSpace } from './space.js';
 import { burst } from './burst.js';
+import { createTour } from './tour.js';
 import { startField, startTrail, startAtom, startEquations, startSpotlight } from './fx.js';
 import {
   CHANNELS, runNoisy, rhoBloch, rhoProbabilities, purity, rhoFidelity, sampleRho, measureShotsRho,
@@ -645,7 +646,10 @@ function update({ silent = false } = {}) {
       ? t('v.solved', { a: r.checks.filter((c) => c.ok).length, b: r.checks.length })
       : t('v.fid', { p: (r.score * 100).toFixed(1) });
     $('fidBar').style.width = `${(r.score * 100).toFixed(1)}%`;
-    if (r.solved && !ui.won && playerGateCount(ui.ops)) { ui.won = true; setTimeout(win, 350); }
+    if (r.solved && !ui.won && playerGateCount(ui.ops)) {
+      ui.won = true;
+      if (!document.body.classList.contains('touring')) setTimeout(win, 350);
+    }
   }
   renderCircuit();
   $('hist').innerHTML = `<span class="empty">${t('m.empty')}</span>`;
@@ -822,7 +826,9 @@ function setMode(mode) {
   $('step').max = COLS;
   ui.step = COLS;
   $('step').value = COLS;
-  document.body.className = `mode-${mode}`;
+  // yalnızca mod sınıfını değiştir; 'touring' gibi diğer sınıflar korunur
+  document.body.classList.remove('mode-level', 'mode-sandbox', 'mode-help');
+  document.body.classList.add(`mode-${mode}`);
   $('story').classList.remove('help');
   for (const b of document.querySelectorAll('.modes button')) {
     b.classList.toggle('on', b.dataset.mode === mode);
@@ -987,6 +993,27 @@ $('themeBtn').addEventListener('click', () => {
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ui.mode !== 'help' && update({ silent: true }));
 
+// ---------- karşılama ve rehber tur ----------
+let levelBeforeTour = null;
+const tour = createTour({
+  t,
+  onStart: () => {
+    $('welcome').open && $('welcome').close();
+    levelBeforeTour = ui.mode === 'level' && !ui.custom ? ui.levelIdx : null;
+    setMode('level');
+    loadLevel(0);
+  },
+  onEnd: () => {
+    setMode('level');
+    loadLevel(levelBeforeTour ?? 0);
+    store.set('dolanik.welcomed', true);
+  },
+});
+$('tourBtn').addEventListener('click', () => tour.start());
+$('welcomeTour').addEventListener('click', () => { $('welcome').close(); tour.start(); });
+$('welcomeSkip').addEventListener('click', () => { $('welcome').close(); store.set('dolanik.welcomed', true); });
+$('welcome').addEventListener('close', () => store.set('dolanik.welcomed', true));
+
 // ---------- başlat ----------
 applyStaticText();
 setupInfoTips();
@@ -994,6 +1021,7 @@ startSpace($('space'));
 startField($('field'));
 startTrail($('trail'));
 startAtom($('atom'));
+startAtom($('welcomeAtom'));
 startEquations($('eqs'));
 startSpotlight();
 document.fonts?.ready.then(() => { moveThumb(); if (ui.mode !== 'help') update({ silent: true }); });
@@ -1008,4 +1036,6 @@ if (fromHash === 'challenge') {
 } else {
   setMode('level');
   loadLevel(ui.levelIdx);
+  // ilk ziyaret: siteyi tanıtan karşılama ekranı
+  if (!store.get('dolanik.welcomed', false)) setTimeout(() => $('welcome').showModal(), 500);
 }
