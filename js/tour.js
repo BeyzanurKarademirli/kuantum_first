@@ -87,7 +87,8 @@ export function createTour({ t, onStart, onEnd }) {
     bubble.querySelector('.tour-prev').textContent = t('tour.prev');
     bubble.querySelector('.tour-close').setAttribute('aria-label', t('tour.close'));
     const dots = bubble.querySelector('.tour-dots');
-    dots.innerHTML = STEPS.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('');
+    dots.innerHTML = STEPS.map((s2, k) => `<button type="button" class="${k === i ? 'on' : k < i ? 'done' : ''}" data-k="${k}"
+      aria-label="${t('tour.step', { a: k + 1, b: STEPS.length })}: ${t(`tour.${s2.key}.title`)}" title="${t(`tour.${s2.key}.title`)}"${k === i ? ' aria-current="step"' : ''}><i></i></button>`).join('');
   };
 
   const go = async (k) => {
@@ -126,6 +127,11 @@ export function createTour({ t, onStart, onEnd }) {
   bubble.querySelector('.tour-next').addEventListener('click', next);
   bubble.querySelector('.tour-prev').addEventListener('click', () => go(i - 1));
   bubble.querySelector('.tour-close').addEventListener('click', () => stop());
+  // noktaya tıklayınca o adıma atla
+  bubble.querySelector('.tour-dots').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-k]');
+    if (b) go(+b.dataset.k);
+  });
   addEventListener('keydown', keys, true);
   addEventListener('resize', onResize);
   addEventListener('scroll', onResize, { passive: true });

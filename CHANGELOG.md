@@ -1,5 +1,11 @@
 # Değişiklik günlüğü
 
+## 0.9.1 — 2026-11-19
+- Kaydırıcılar arka plandan ayrışıyor: geçilen kısım safran, kalan kısım belirgin gri, safran kenarlı tutamaç.
+- Rehber turda alttaki noktalar tıklanabilir: istenen adıma doğrudan atlanır (ekran okuyucu etiketli).
+- İmleç sembol izindeki altın parıltı kaldırıldı; semboller sade ve yumuşak.
+- Seçili kapıdaki dönen halka yerine sakin, yavaşça ışıyan sabit çerçeve.
+
 ## 0.9.0 — 2026-11-19
 - İlk ziyarette karşılama ekranı: sitenin amacı, öğretecekleri, ön bilgi gerekmediği.
 - Rehber tur (11 adım): hayalet imleç sayfada gezer, her kısmı ışık halkasıyla vurgular, anlatım

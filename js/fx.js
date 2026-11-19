@@ -169,8 +169,7 @@ export function startTrail(canvas) {
       ctx.globalAlpha = Math.max(0, 1 - age) * 0.85;
       ctx.translate(g.x, g.y); ctx.rotate(g.rot * age);
       ctx.font = `italic 600 ${g.size * (1 - age * 0.25)}px Fraunces, Georgia, serif`;
-      if (dark) { ctx.shadowColor = 'rgba(255, 210, 130, 0.9)'; ctx.shadowBlur = 8; }
-      ctx.fillStyle = dark ? '#ffe7b8' : css('--ink');
+      ctx.fillStyle = dark ? 'rgba(232, 230, 248, 0.9)' : css('--ink');
       ctx.fillText(g.s, 0, 0);
       ctx.restore();
     }
@@ -181,7 +180,7 @@ export function startTrail(canvas) {
       for (let k = 0; k < 2; k++) {
         const a = age - k * 0.18;
         if (a <= 0) continue;
-        ctx.strokeStyle = dark ? `rgba(255, 214, 140, ${(1 - age) * 0.8})` : `rgba(23, 20, 43, ${(1 - age) * 0.5})`;
+        ctx.strokeStyle = dark ? `rgba(232, 230, 248, ${(1 - age) * 0.6})` : `rgba(23, 20, 43, ${(1 - age) * 0.5})`;
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.ellipse(rings[i].x, rings[i].y, 6 + a * 40, (6 + a * 40) * 0.42, -0.5 + k, 0, Math.PI * 2); ctx.stroke();
       }

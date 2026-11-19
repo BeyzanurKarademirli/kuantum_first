@@ -993,6 +993,19 @@ $('themeBtn').addEventListener('click', () => {
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ui.mode !== 'help' && update({ silent: true }));
 
+// kaydırıcıların dolu kısmı (--fill): sürüklerken ve kod değeri değiştirdiğinde
+function syncRange(r) {
+  const min = +r.min || 0, max = +r.max || 100;
+  r.style.setProperty('--fill', `${((+r.value - min) / (max - min || 1)) * 100}%`);
+}
+document.addEventListener('input', (e) => { if (e.target.matches?.('input[type="range"]')) syncRange(e.target); });
+new MutationObserver(() => document.querySelectorAll('input[type="range"]').forEach(syncRange))
+  .observe(document.body, { childList: true, subtree: true });
+const _stepSet = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+for (const r of document.querySelectorAll('input[type="range"]')) {
+  Object.defineProperty(r, 'value', { get() { return _stepSet.get.call(this); }, set(v) { _stepSet.set.call(this, v); syncRange(this); } });
+}
+
 // ---------- karşılama ve rehber tur ----------
 let levelBeforeTour = null;
 const tour = createTour({
