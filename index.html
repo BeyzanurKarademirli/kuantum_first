@@ -5,112 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dolanık — Kuantum Devre Bulmacası</title>
   <meta name="description" content="Tarayıcıda çalışan, ücretsiz ve açık kaynak kuantum devre bulmaca oyunu. Kapıları yerleştir, genlikleri gör, süperpozisyonu dinle.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='12' fill='%2378f0d0'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%23b48cff' stroke-width='6'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%2378f0d0' stroke-width='6' transform='rotate(60 50 50)'/><ellipse cx='50' cy='50' rx='44' ry='16' fill='none' stroke='%23ff9db0' stroke-width='6' transform='rotate(120 50 50)'/></svg>">
+  <meta name="theme-color" content="#f4efe4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e0c1a" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2317142b'/><path d='M14 32c0-9 8-14 18-14s18 5 18 14-8 14-18 14-18-5-18-14z' fill='none' stroke='%23e4472a' stroke-width='5' transform='rotate(35 32 32)'/><path d='M14 32c0-9 8-14 18-14s18 5 18 14-8 14-18 14-18-5-18-14z' fill='none' stroke='%237b8cff' stroke-width='5' transform='rotate(-35 32 32)'/><circle cx='32' cy='32' r='5' fill='%23f4efe4'/></svg>">
+  <link rel="preload" href="fonts/fraunces-latin-full-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <canvas id="ebru" class="ebru" aria-hidden="true"></canvas>
+  <a class="skip" href="#circuit" data-i18n="circuit.aria">Kuantum devresi</a>
+
   <header class="top">
     <div class="brand">
-      <span class="logo" aria-hidden="true">⟨ψ|</span>
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="mk1" x1="0" x2="1"><stop offset="0" stop-color="var(--vermilion)"/><stop offset="1" stop-color="var(--saffron)"/></linearGradient>
+          <linearGradient id="mk2" x1="0" x2="1"><stop offset="0" stop-color="var(--cobalt)"/><stop offset="1" stop-color="var(--jade)"/></linearGradient>
+        </defs>
+        <ellipse class="orbit o1" cx="32" cy="32" rx="26" ry="11" stroke="url(#mk1)" transform="rotate(35 32 32)"/>
+        <ellipse class="orbit o2" cx="32" cy="32" rx="26" ry="11" stroke="url(#mk2)" transform="rotate(-35 32 32)"/>
+        <circle class="core" cx="32" cy="32" r="4.5"/>
+      </svg>
       <div>
-        <h1>Dolanık</h1>
-        <p class="tag">kuantum devre bulmacası</p>
+        <h1 class="wordmark">Dolanık</h1>
+        <p class="tag" data-i18n="brand.tag">kuantum devre bulmacası</p>
       </div>
     </div>
-    <nav class="modes" role="tablist">
-      <button role="tab" data-mode="level" class="on">Bölümler</button>
-      <button role="tab" data-mode="sandbox">Serbest Laboratuvar</button>
-      <button role="tab" data-mode="help">Nasıl okunur?</button>
-    </nav>
+    <div class="top-right">
+      <nav class="modes" role="tablist">
+        <span class="thumb" aria-hidden="true"></span>
+        <button role="tab" data-mode="level" class="on" data-i18n="mode.level">Bölümler</button>
+        <button role="tab" data-mode="sandbox" data-i18n="mode.sandbox">Laboratuvar</button>
+        <button role="tab" data-mode="help" data-i18n="mode.help">Nasıl okunur?</button>
+      </nav>
+      <button id="langBtn" class="pill" data-i18n="lang.switch" data-i18n-aria="lang.aria">English</button>
+      <button id="themeBtn" class="pill icon" data-i18n-aria="theme.aria" aria-label="Açık / koyu tema">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41"/><circle cx="12" cy="12" r="4.2"/></svg>
+      </button>
+    </div>
   </header>
 
   <main class="layout">
     <aside class="side" id="side"></aside>
 
     <section class="work">
-      <div class="card story" id="story"></div>
+      <article class="card story" id="story"></article>
 
-      <div class="card">
-        <div class="palette" id="palette" aria-label="Kapılar"></div>
-        <p class="gate-desc" id="gateDesc">Bir kapı seç, sonra devrede bir hücreye tıkla. Kapıya tekrar tıklayınca silinir.</p>
-        <div class="circuit-wrap"><svg id="circuit" role="img" aria-label="Kuantum devresi"></svg></div>
+      <section class="card bench">
+        <div class="palette" id="palette" data-i18n-aria="gates.aria" aria-label="Kapılar"></div>
+        <p class="gate-desc" id="gateDesc" aria-live="polite"></p>
+        <div class="circuit-wrap"><svg id="circuit" role="group" data-i18n-aria="circuit.aria" aria-label="Kuantum devresi"></svg></div>
         <div class="controls">
-          <label class="step">Zaman <input type="range" id="step" min="0" max="8" value="8"><output id="stepOut">tümü</output></label>
+          <label class="step"><span data-i18n="ctl.time">Zaman</span> <input type="range" id="step" min="0" max="8" value="8"><output id="stepOut">tümü</output></label>
           <div class="btns">
-            <button id="undo" title="Geri al (Ctrl+Z)">↶ Geri</button>
-            <button id="clear">Temizle</button>
-            <button id="listen" title="Durumu dinle">♪ Dinle</button>
-            <label class="toggle"><input type="checkbox" id="autoSound"> sesli mod</label>
-            <button id="qasm" title="OpenQASM olarak dışa/içe aktar">⟨/⟩ QASM</button>
-            <button id="share" class="sandbox-only">🔗 Paylaş</button>
-            <button id="challenge" class="sandbox-only" title="Bu durumu arkadaşına bulmaca olarak gönder">🎯 Meydan oku</button>
+            <button id="undo" class="btn" data-i18n-title="ctl.undoTitle"><span aria-hidden="true">↶</span> <span data-i18n="ctl.undo">Geri</span></button>
+            <button id="clear" class="btn" data-i18n="ctl.clear">Temizle</button>
+            <button id="listen" class="btn" data-i18n-title="ctl.listenTitle"><span aria-hidden="true">♪</span> <span data-i18n="ctl.listen">Dinle</span></button>
+            <label class="toggle"><input type="checkbox" id="autoSound"><span class="sw" aria-hidden="true"></span><span data-i18n="ctl.sound">sesli mod</span></label>
+            <button id="qasm" class="btn" data-i18n-title="ctl.qasmTitle"><span aria-hidden="true">⟨/⟩</span> QASM</button>
+            <button id="share" class="btn sandbox-only"><span aria-hidden="true">↗</span> <span data-i18n="ctl.share">Paylaş</span></button>
+            <button id="challenge" class="btn ink sandbox-only" data-i18n-title="ctl.challengeTitle"><span aria-hidden="true">◎</span> <span data-i18n="ctl.challenge">Meydan oku</span></button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card measure">
+      <section class="card measure">
         <div class="measure-head">
-          <h2>Ölçüm</h2>
+          <h2 data-i18n="m.title">Ölçüm</h2>
           <div class="btns">
-            <button id="m1">Bir kez ölç</button>
-            <button id="m256">256 kez ölç</button>
+            <button id="m1" class="btn" data-i18n="m.once">Bir kez ölç</button>
+            <button id="m256" class="btn ink" data-i18n="m.many">256 kez ölç</button>
           </div>
         </div>
         <div id="hist" class="hist"></div>
-        <p class="fine">Rastgelelik tarayıcının kriptografik üretecinden gelir. Bu bir simülasyon: gerçek bir kuantum bilgisayarın ürettiği olasılık dağılımının aynısını üretir.</p>
-      </div>
+        <p class="fine" data-i18n="m.note"></p>
+      </section>
     </section>
 
     <section class="view">
-      <div class="card">
-        <h2>Durum <small id="stateText" class="mono"></small></h2>
+      <section class="card state" id="stateCard">
+        <h2><span data-i18n="v.state">Durum</span></h2>
+        <p id="stateText" class="mono ket-line"></p>
         <canvas id="amps" class="amps"></canvas>
-        <div class="legend"><span class="wheel" aria-hidden="true"></span> çember boyu = genlik, renk ve ibre = faz</div>
+        <div class="legend"><span class="wheel" aria-hidden="true"></span> <span data-i18n="v.legend"></span></div>
         <p id="noiseInfo" class="noise-info" hidden></p>
-      </div>
-      <div class="card" id="targetCard">
-        <h2>Hedef <span id="fid" class="fid"></span></h2>
+      </section>
+      <section class="card" id="targetCard">
+        <h2><span data-i18n="v.target">Hedef</span> <span id="fid" class="fid"></span></h2>
         <canvas id="target" class="amps small"></canvas>
         <div id="variants" class="variants" hidden></div>
         <div class="meter"><div id="fidBar"></div></div>
-      </div>
-      <div class="card">
-        <h2>Bloch küreleri <small>her kübit tek başına</small></h2>
+      </section>
+      <section class="card">
+        <h2><span data-i18n="v.bloch">Bloch küreleri</span> <small data-i18n="v.blochSub">her kübit tek başına</small></h2>
         <div id="blochs" class="blochs"></div>
         <p class="fine" id="entNote"></p>
-      </div>
+      </section>
     </section>
   </main>
 
   <div id="win" class="win" hidden>
-    <div class="win-box">
+    <canvas id="burst" class="burst" aria-hidden="true"></canvas>
+    <div class="win-box" role="dialog" aria-modal="true" aria-labelledby="winTitle">
       <div class="stars" id="winStars"></div>
-      <h2 id="winTitle">Başardın!</h2>
+      <h2 id="winTitle"></h2>
       <p id="winText"></p>
-      <div class="btns"><button id="stay">Devrede kal</button><button id="next" class="primary">Sonraki bölüm →</button></div>
+      <div class="btns"><button id="stay" class="btn" data-i18n="win.stay">Devrede kal</button><button id="next" class="btn primary"><span data-i18n="win.next">Sonraki bölüm</span> <span aria-hidden="true">→</span></button></div>
     </div>
   </div>
 
- <dialog id="qasmDlg" class="qasm-dlg" aria-labelledby="qasmTitle">
+  <dialog id="qasmDlg" class="qasm-dlg" aria-labelledby="qasmTitle">
     <h2 id="qasmTitle">OpenQASM</h2>
-    <p class="fine">OpenQASM, kuantum devreleri için endüstri standardı dildir. Bu kodu IBM Quantum Platform, Qiskit, Amazon Braket ya da Cirq gibi araçlara yapıştırıp <b>gerçek kuantum donanımında</b> çalıştırabilirsin. Serbest Laboratuvar'da başka bir yerden kod yapıştırıp içe de aktarabilirsin.</p>
-    <label class="fine">Sürüm
+    <p class="fine" data-i18n-html="qasm.intro"></p>
+    <label class="fine ver"><span data-i18n="qasm.version">Sürüm</span>
       <select id="qasmVer"><option value="3">OpenQASM 3.0</option><option value="2">OpenQASM 2.0</option></select>
     </label>
-    <textarea id="qasmCode" spellcheck="false" rows="14" aria-label="OpenQASM kodu"></textarea>
+    <textarea id="qasmCode" spellcheck="false" rows="14" data-i18n-aria="qasm.codeAria" aria-label="OpenQASM kodu"></textarea>
     <p id="qasmErr" class="err" role="alert"></p>
     <div class="btns">
-      <button id="qasmCopy">Kopyala</button>
-      <button id="qasmImport" class="primary">İçe aktar</button>
-      <button id="qasmClose">Kapat</button>
+      <button id="qasmCopy" class="btn" data-i18n="qasm.copy">Kopyala</button>
+      <button id="qasmImport" class="btn primary" data-i18n="qasm.import">İçe aktar</button>
+      <button id="qasmClose" class="btn" data-i18n="qasm.close">Kapat</button>
     </div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <footer class="foot">
-    Açık kaynak · MIT lisansı · reklam yok, takip yok, hesap yok. İlerlemen yalnızca kendi tarayıcında saklanır.
-  </footer>
+  <footer class="foot" data-i18n="foot"></footer>
 
   <script type="module" src="js/app.js"></script>
 </body>

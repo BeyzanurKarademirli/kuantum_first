@@ -137,7 +137,7 @@ test('bit-çevirme kodu: kodlama olmadan q0 hatası düzeltilemez', () => {
   const r = evaluateLevel(lv, lockedOps(lv));
   // her ψ için 'hata yok', 'q1' ve 'q2' kendiliğinden doğru; q0 hatası düzeltilmeden kalır
   assert.equal(r.checks.filter((c) => c.ok).length, 6);
-  assert.ok(r.checks.filter((c) => !c.ok).every((c) => c.name.includes('q0')));
+  assert.ok(r.checks.filter((c) => !c.ok).every((c) => c.name.tr.includes('q0') && c.name.en.includes('q0')));
 });
 
 test('bölüm kimlikleri benzersiz', () => {

@@ -4,6 +4,14 @@
 // q[0]'ı en sağa yazar. Devre aynıdır, yalnızca bit dizilerinin okunuş sırası farklıdır.
 import { sortOps, GATES, angleLabel } from './quantum.js';
 
+// Hata: Türkçe mesaj + arayüzün çevirebilmesi için anahtar ve parametreler
+function qerr(key, params, message) {
+  const e = new Error(message);
+  e.key = key;
+  e.params = params;
+  return e;
+}
+
 const TO_QASM = {
   H: 'h', X: 'x', Y: 'y', Z: 'z', S: 's', T: 't', CNOT: 'cx', CZ: 'cz', SWAP: 'swap', RX: 'rx', RY: 'ry', RZ: 'rz', CP: 'cp', CCX: 'ccx',
 };
@@ -49,7 +57,7 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
     let m;
     if (/^OPENQASM\b/i.test(st) || /^include\b/.test(st)) continue;
     if ((m = st.match(/^qubit\s*\[\s*(\d+)\s*\]\s*(\w+)$/)) || (m = st.match(/^qreg\s+(\w+)\s*\[\s*(\d+)\s*\]$/))) {
-      if (n != null) throw new Error('Yalnızca tek bir kübit yazmacı destekleniyor.');
+      if (n != null) throw qerr('multiReg', {}, 'Yalnızca tek bir kübit yazmacı destekleniyor.');
       const isV3 = st.startsWith('qubit');
       n = +(isV3 ? m[1] : m[2]);
       reg = isV3 ? m[2] : m[1];
@@ -57,33 +65,33 @@ export function fromQasm(text, { maxQubits = 4, maxCols = 12 } = {}) {
     }
     if (/^(bit|creg)\b/.test(st) || /\bmeasure\b/.test(st) || /^barrier\b/.test(st)) continue;
     m = st.match(/^(\w+)\s*(?:\(([^)]*)\))?\s+(\w+\s*\[\s*\d+\s*\](?:\s*,\s*\w+\s*\[\s*\d+\s*\])*)$/);
-    if (!m) throw new Error(`Anlaşılamayan satır: "${st}"`);
+    if (!m) throw qerr('unparsed', { st }, `Anlaşılamayan satır: "${st}"`);
     const g = FROM_QASM[m[1]];
-    if (!g) throw new Error(`Desteklenmeyen kapı: ${m[1]} (desteklenen: ${Object.values(TO_QASM).join(', ')})`);
+    if (!g) throw qerr('unsupported', { g: m[1], list: Object.values(TO_QASM).join(', ') }, `Desteklenmeyen kapı: ${m[1]} (desteklenen: ${Object.values(TO_QASM).join(', ')})`);
     const isParam = !!GATES[g].param;
-    if (isParam !== (m[2] != null)) throw new Error(isParam ? `${m[1]} kapısı bir açı ister: ${m[1]}(pi/4) q[0];` : `${m[1]} kapısı açı almaz.`);
+    if (isParam !== (m[2] != null)) throw isParam ? qerr('needAngle', { g: m[1] }, `${m[1]} kapısı bir açı ister: ${m[1]}(pi/4) q[0];`) : qerr('noAngle', { g: m[1] }, `${m[1]} kapısı açı almaz.`);
     const theta = isParam ? evalAngle(m[2]) : null;
     const args = m[3].split(',').map((a) => a.trim().match(/^(\w+)\s*\[\s*(\d+)\s*\]$/));
-    for (const a of args) if (a[1] !== reg) throw new Error(`Bilinmeyen yazmaç: ${a[1]}`);
-    if (args.length !== GATES[g].arity) throw new Error(`${m[1]} kapısına yanlış sayıda kübit verildi.`);
+    for (const a of args) if (a[1] !== reg) throw qerr('reg', { r: a[1] }, `Bilinmeyen yazmaç: ${a[1]}`);
+    if (args.length !== GATES[g].arity) throw qerr('arity', { g: m[1] }, `${m[1]} kapısına yanlış sayıda kübit verildi.`);
     const [q, q2, q3] = args.map((a) => +a[2]);
     gates.push({
       g, q, ...(q2 != null ? { q2 } : {}), ...(q3 != null ? { q3 } : {}), ...(isParam ? { theta } : {}),
     });
   }
-  if (n == null) throw new Error('Kübit tanımı bulunamadı (qubit[n] q; ya da qreg q[n];).');
-  if (n < 1 || n > maxQubits) throw new Error(`En fazla ${maxQubits} kübit destekleniyor (${n} istendi).`);
+  if (n == null) throw qerr('noQubits', {}, 'Kübit tanımı bulunamadı (qubit[n] q; ya da qreg q[n];).');
+  if (n < 1 || n > maxQubits) throw qerr('tooMany', { max: maxQubits, n }, `En fazla ${maxQubits} kübit destekleniyor (${n} istendi).`);
   const ops = [];
   const nextFree = new Array(n).fill(0);
   for (const op of gates) {
     const rows = [op.q, op.q2, op.q3].filter((x) => x != null);
-    if (rows.some((r) => r >= n)) throw new Error(`Kübit indeksi aralık dışında: q[${Math.max(...rows)}]`);
-    if (new Set(rows).size !== rows.length) throw new Error('Çok kübitli bir kapının kübitleri farklı olmalı.');
+    if (rows.some((r) => r >= n)) throw qerr('range', { q: Math.max(...rows) }, `Kübit indeksi aralık dışında: q[${Math.max(...rows)}]`);
+    if (new Set(rows).size !== rows.length) throw qerr('distinct', {}, 'Çok kübitli bir kapının kübitleri farklı olmalı.');
     // aradaki kablolar da çizimde kapandığı için onları da işgal et
     const lo = Math.min(...rows), hi = Math.max(...rows);
     let col = 0;
     for (let r = lo; r <= hi; r++) col = Math.max(col, nextFree[r]);
-    if (col >= maxCols) throw new Error(`Devre ${maxCols} sütuna sığmıyor.`);
+    if (col >= maxCols) throw qerr('cols', { k: maxCols }, `Devre ${maxCols} sütuna sığmıyor.`);
     for (let r = lo; r <= hi; r++) nextFree[r] = col + 1;
     ops.push({ ...op, col });
   }
@@ -95,7 +103,7 @@ export function evalAngle(src) {
   const toks = src.match(/\d+\.?\d*(?:e[+-]?\d+)?|\.\d+|pi|π|[-+*/()]|\S/gi) || [];
   let i = 0;
   const peek = () => toks[i];
-  const fail = () => { throw new Error(`Açı anlaşılamadı: "${src}"`); };
+  const fail = () => { throw qerr('angle', { src }, `Açı anlaşılamadı: "${src}"`); };
   function expr() {
     let v = term();
     while (peek() === '+' || peek() === '-') v = toks[i++] === '+' ? v + term() : v - term();

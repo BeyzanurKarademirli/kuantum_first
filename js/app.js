@@ -9,6 +9,9 @@ import {
   evaluateLevel, expandOracle, lockedOps, oracleOf, playerGateCount, starsFor, placementAllowed, opRows,
 } from './game.js';
 import { toQasm, fromQasm } from './qasm.js';
+import { t, tx, setLang, getLang, detectLang } from './i18n.js';
+import { LEVELS_EN } from './levels-en.js';
+import { startEbru, burst } from './ebru.js';
 import {
   CHANNELS, runNoisy, rhoBloch, rhoProbabilities, purity, rhoFidelity, sampleRho, measureShotsRho,
 } from './noise.js';
@@ -22,6 +25,55 @@ const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* gizli pencere vb. */ } },
 };
+
+// ---------- dil ve tema ----------
+setLang(store.get('dolanik.lang', null) ?? detectLang(navigator.languages || [navigator.language || 'tr']));
+const savedTheme = store.get('dolanik.theme', null);
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+const isEn = () => getLang() === 'en';
+const lvText = (lv, f) => {
+  if (lv.id === 'meydan') {
+    if (f === 'title') return t('challenge.title');
+    if (f === 'story') return t('challenge.story', { n: lv.n, k: lv.par });
+    return t('challenge.hint');
+  }
+  return isEn() ? LEVELS_EN[lv.id]?.[f] ?? lv[f] : lv[f];
+};
+const chapterName = (c) => (isEn() ? t(`chapter.${c}`) : c);
+const gateName = (g) => (isEn() ? t(`gate.${g}.name`) : GATES[g].name);
+const gateDesc = (g) => (isEn() ? t(`gate.${g}.desc`) : GATES[g].desc);
+const chName = (k) => (isEn() ? t(`channel.${k}.name`) : CHANNELS[k].name);
+const chDesc = (k) => (isEn() ? t(`channel.${k}.desc`) : CHANNELS[k].desc);
+const GATE_FAMILY = {
+  X: 'pauli', Y: 'pauli', Z: 'pauli', H: 'h', S: 'phase', T: 'phase',
+  RX: 'rot', RY: 'rot', RZ: 'rot', CNOT: 'multi', CZ: 'multi', SWAP: 'multi', CP: 'multi', CCX: 'multi',
+};
+const FAMILY_VAR = { pauli: '--vermilion', h: '--jade', phase: '--saffron', rot: '--cobalt', multi: '--rose' };
+
+// Metindeki |01⟩ gibi ket'leri eşit aralıklı küçük etiketlere çevirerek yaz
+function setRich(el, text) {
+  el.replaceChildren();
+  for (const part of String(text).split(/(\|[^|⟩\s]{1,12}⟩)/)) {
+    if (!part) continue;
+    if (/^\|[^|⟩\s]{1,12}⟩$/.test(part)) {
+      const k = document.createElement('span');
+      k.className = 'ket';
+      k.textContent = part;
+      el.appendChild(k);
+    } else el.appendChild(document.createTextNode(part));
+  }
+}
+
+function applyStaticText() {
+  document.documentElement.lang = getLang();
+  document.title = t('meta.title');
+  document.querySelector('meta[name="description"]').setAttribute('content', t('meta.desc'));
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-html]')) el.innerHTML = t(el.dataset.i18nHtml);
+  for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  for (const el of document.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
+}
 
 const ui = {
   mode: 'level',
@@ -41,6 +93,7 @@ const ui = {
   theta: Math.PI / 4,
   noise: { kind: 'yok', p: 0.05 },
   custom: null,
+  justAdded: null,
 };
 
 const level = () => ui.custom ?? LEVELS[ui.levelIdx];
@@ -94,7 +147,7 @@ function onCell(col, row) {
     if (free && rows.length < GATES[p.g].arity) {
       p.rows = rows;
       click(770);
-      $('gateDesc').textContent = 'Şimdi aynı sütunda hedef kübite tıkla.';
+      $('gateDesc').textContent = t('gate.target');
       renderCircuit();
       return;
     }
@@ -104,32 +157,32 @@ function onCell(col, row) {
     if (free && allowed(op)) {
       click(880);
       setDesc();
+      ui.justAdded = op;
       commit([...ui.ops, op]);
     } else {
-      toast(free
-        ? `${GATES[p.g].name} bu bölümde bu kübitler arasına konamaz.`
-        : 'Kübitler aynı sütunda, boş hücrelerde ve farklı olmalı.');
+      toast(free ? t('toast.pairBad', { g: gateName(p.g) }) : t('toast.cellsBad'));
       setDesc();
       renderCircuit();
     }
     return;
   }
   const occ = occupant(col, row);
-  if (occ?.locked) { toast('Bu kutu kilitli: içini göremezsin, yalnızca devrende kullanabilirsin.'); return; }
+  if (occ?.locked) { toast(t('toast.locked')); return; }
   if (occ) { click(330); commit(ui.ops.filter((o) => o !== occ)); return; }
   const g = ui.selected;
-  if (!g) { toast('Önce yukarıdan bir kapı seç.'); return; }
-  if (!allowed({ g, q: row })) { toast(`${GATES[g].name} bu bölümde yalnızca belirli kübitlere takılabilir.`); return; }
+  if (!g) { toast(t('toast.pickFirst')); return; }
+  if (!allowed({ g, q: row })) { toast(t('toast.rowBad', { g: gateName(g) })); return; }
   if (GATES[g].arity > 1) {
-    if (nQubits() < GATES[g].arity) { toast(`Bu kapı için en az ${GATES[g].arity} kübit gerekir.`); return; }
+    if (nQubits() < GATES[g].arity) { toast(t('toast.needQubits', { k: GATES[g].arity })); return; }
     ui.pending = { g, rows: [row], col };
-    $('gateDesc').textContent = g === 'CCX' ? 'Şimdi aynı sütunda ikinci kontrol kübitine tıkla.'
-      : g === 'CNOT' ? 'Şimdi aynı sütunda hedef kübite tıkla.' : 'Şimdi aynı sütunda ikinci kübite tıkla.';
+    $('gateDesc').textContent = g === 'CCX' ? t('gate.secondCtrl') : g === 'CNOT' ? t('gate.target') : t('gate.second');
     renderCircuit();
     return;
   }
   click(660);
-  commit([...ui.ops, { g, q: row, col, ...(GATES[g].param ? { theta: ui.theta } : {}) }]);
+  const op = { g, q: row, col, ...(GATES[g].param ? { theta: ui.theta } : {}) };
+  ui.justAdded = op;
+  commit([...ui.ops, op]);
 }
 
 // ---------- çizim ----------
@@ -152,13 +205,25 @@ function renderCircuit() {
   const cy = (r) => 4 + r * CH + CH / 2;
   const cx = (c) => LW + c * CW + CW / 2;
 
+  // desenler: geleceği gösteren tarama ve gizli kutu kenarı için faz gradyanı
+  const defs = el('defs', {}, svg);
+  const pat = el('pattern', { id: 'hatch', width: 7, height: 7, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  el('line', { x1: 0, y1: 0, x2: 0, y2: 7, stroke: 'var(--line-2)', 'stroke-width': 2 }, pat);
+  const pg = el('linearGradient', { id: 'phaseGrad', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  ['#ff5a3c', '#ffb340', '#3fd18b', '#3fb6ff', '#7a6bff', '#ff4fa3'].forEach((c, i, a) => el('stop', { offset: i / (a.length - 1), 'stop-color': c }, pg));
+
   if (ui.step < COLS) {
-    el('rect', { class: 'now', x: LW + ui.step * CW, y: 0, width: (COLS - ui.step) * CW, height: H }, svg);
+    el('rect', { class: 'now', x: LW + ui.step * CW, y: 0, width: (COLS - ui.step) * CW, height: H, opacity: 0.5 }, svg);
   }
+  const flowEnd = LW + Math.min(ui.step, COLS) * CW;
   for (let r = 0; r < n; r++) {
-    el('line', { class: 'wire', x1: LW - 8, y1: cy(r), x2: W - 4, y2: cy(r) }, svg);
-    const t = el('text', { class: 'qlabel', x: 6, y: cy(r) + 4 }, svg);
-    t.textContent = `q${r} |0⟩`;
+    el('line', { class: 'wire', x1: LW - 6, y1: cy(r), x2: W - 4, y2: cy(r) }, svg);
+    if (flowEnd > LW) el('line', { class: 'flow', x1: LW - 6, y1: cy(r), x2: flowEnd, y2: cy(r), style: `animation-delay:${-r * 0.4}s` }, svg);
+    const lab = el('text', { class: 'qlabel', x: 4, y: cy(r) + 4 }, svg);
+    const q = el('tspan', { class: 'q' }, lab);
+    q.textContent = `q${r}`;
+    const k = el('tspan', { dx: 4 }, lab);
+    k.textContent = '|0⟩';
   }
   // yerleşim kısıtı olan satırları soluklaştır
   if (ui.selected && ui.mode === 'level' && level().allowedRows?.[ui.selected]) {
@@ -167,14 +232,28 @@ function renderCircuit() {
     }
   }
   for (const op of ui.ops) {
-    const g = el('g', op.col >= ui.step ? { class: 'future' } : {}, svg);
+    const fresh = op === ui.justAdded;
+    const outer = el('g', op.col >= ui.step ? { class: 'future' } : {}, svg);
+    const g = el('g', { class: `opshape${fresh ? ' pop' : ''}` }, outer);
     const x = cx(op.col);
     if (op.g === 'ORACLE') {
       const [lo, hi] = span(op);
-      el('rect', { class: 'oracle', x: x - 22, y: 4 + lo * CH + 6, width: 44, height: (hi - lo + 1) * CH - 12, rx: 10 }, g);
-      const t = el('text', { class: 'otext', x, y: 4 + ((lo + hi + 1) * CH) / 2 + 5, 'text-anchor': 'middle' }, g);
-      t.textContent = op.label ?? oracleOf(level()).label;
+      const y0 = 4 + lo * CH + 5, hh = (hi - lo + 1) * CH - 10;
+      el('rect', { class: 'oracle', x: x - 22, y: y0, width: 44, height: hh, rx: 12 }, g);
+      el('rect', { class: 'oracle-edge', x: x - 22, y: y0, width: 44, height: hh, rx: 12 }, g);
+      const txt = el('text', { class: 'otext', x, y: 4 + ((lo + hi + 1) * CH) / 2 + 6, 'text-anchor': 'middle' }, g);
+      // "U_ω" → U ve alt simge ω; "U^k" → üst simge
+      const [base, sub, sup] = (op.label ?? oracleOf(level()).label).match(/^([^_^]*)(?:_(.+))?(?:\^(.+))?$/).slice(1);
+      txt.textContent = base;
+      if (sub || sup) {
+        const ts = el('tspan', { dy: sub ? 5 : -7, 'font-size': '12' }, txt);
+        ts.textContent = sub || sup;
+      }
       continue;
+    }
+    if (fresh) {
+      const fam = getComputedStyle(document.documentElement).getPropertyValue(FAMILY_VAR[GATE_FAMILY[op.g]]);
+      el('circle', { class: 'ripple', cx: x, cy: cy(op.q3 ?? op.q2 ?? op.q), r: 10, stroke: fam }, outer);
     }
     if (op.g === 'CCX') {
       const [lo, hi] = span(op);
@@ -197,8 +276,8 @@ function renderCircuit() {
         if (op.g === 'CP') {
           const my = (cy(op.q) + cy(op.q2)) / 2;
           el('rect', { class: 'cplabel', x: x - 20, y: my - 9, width: 40, height: 18, rx: 5 }, g);
-          const t = el('text', { class: 'gangle', x, y: my + 4, 'text-anchor': 'middle' }, g);
-          t.textContent = angleLabel(op.theta);
+          const lab = el('text', { class: 'gangle', x, y: my + 4, 'text-anchor': 'middle' }, g);
+          lab.textContent = angleLabel(op.theta);
         }
       } else {
         for (const r of [op.q, op.q2]) {
@@ -207,15 +286,18 @@ function renderCircuit() {
         }
       }
     } else {
-      el('rect', { class: 'gbox', x: x - 21, y: cy(op.q) - 21, width: 42, height: 42, rx: 8 }, g);
+      const famVar = FAMILY_VAR[GATE_FAMILY[op.g]];
+      el('rect', { class: 'gshadow', x: x - 19, y: cy(op.q) - 17, width: 42, height: 42, rx: 9 }, g);
+      el('rect', { class: 'gbox', x: x - 21, y: cy(op.q) - 21, width: 42, height: 42, rx: 9 }, g);
+      el('rect', { class: 'gfam', x: x - 20, y: cy(op.q) + 15, width: 40, height: 5, rx: 2, style: `fill:var(${famVar})` }, g);
       if (GATES[op.g].param) {
-        const t = el('text', { class: 'gtext', x, y: cy(op.q) + 1, 'text-anchor': 'middle' }, g);
-        t.textContent = GATES[op.g].label;
-        const a = el('text', { class: 'gangle', x, y: cy(op.q) + 15, 'text-anchor': 'middle' }, g);
+        const lab = el('text', { class: 'gtext', x, y: cy(op.q) - 1, 'text-anchor': 'middle' }, g);
+        lab.textContent = GATES[op.g].label;
+        const a = el('text', { class: 'gangle', x, y: cy(op.q) + 11, 'text-anchor': 'middle' }, g);
         a.textContent = angleLabel(op.theta);
       } else {
-        const t = el('text', { class: 'gtext', x, y: cy(op.q) + 6, 'text-anchor': 'middle' }, g);
-        t.textContent = op.g;
+        const lab = el('text', { class: 'gtext', x, y: cy(op.q) + 5, 'text-anchor': 'middle' }, g);
+        lab.textContent = op.g;
       }
     }
   }
@@ -226,12 +308,14 @@ function renderCircuit() {
     for (let r = 0; r < n; r++) {
       const rect = el('rect', { class: 'cell', x: LW + c * CW, y: 4 + r * CH, width: CW, height: CH, tabindex: 0 }, svg);
       const occ = occupant(c, r);
-      const what = occ?.locked ? ': kilitli gizli kutu' : occ ? `: ${gateText(occ)} (silmek için tıkla)` : '';
-      rect.setAttribute('aria-label', `sütun ${c + 1}, kübit ${r}${what}`);
+      const what = occ?.locked ? t('cell.locked') : occ ? t('cell.gate', { g: gateText(occ) }) : '';
+      rect.setAttribute('role', 'button');
+      rect.setAttribute('aria-label', t('cell.aria', { c: c + 1, r, what }));
       rect.addEventListener('click', () => onCell(c, r));
       rect.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCell(c, r); } });
     }
   }
+  ui.justAdded = null;
 }
 
 function renderPalette() {
@@ -239,10 +323,12 @@ function renderPalette() {
   pal.replaceChildren();
   for (const g of gateList()) {
     const b = document.createElement('button');
-    b.className = `gate${GATES[g].arity > 1 ? ' two' : ''}${ui.selected === g ? ' sel' : ''}`;
-    b.textContent = ['CNOT', 'SWAP', 'CP', 'CCX'].includes(g) ? g : GATES[g].label;
+    const wide = ['CNOT', 'SWAP', 'CP', 'CCX', 'CZ'].includes(g);
+    b.className = `gate${wide ? ' wide' : ''}${ui.selected === g ? ' sel' : ''}`;
+    b.dataset.fam = GATE_FAMILY[g];
+    b.textContent = wide ? g : GATES[g].label;
     b.setAttribute('aria-pressed', ui.selected === g);
-    b.title = `${GATES[g].name}: ${GATES[g].desc}`;
+    b.title = `${gateName(g)}: ${gateDesc(g)}`;
     b.addEventListener('click', () => selectGate(g));
     pal.appendChild(b);
   }
@@ -251,7 +337,7 @@ function renderPalette() {
     lab.className = `angle${GATES[ui.selected]?.param ? '' : ' dim'}`;
     lab.textContent = 'θ = ';
     const sel = document.createElement('select');
-    sel.setAttribute('aria-label', 'Döndürme açısı');
+    sel.setAttribute('aria-label', t('gate.angle'));
     for (const a of ANGLES) {
       const o = document.createElement('option');
       o.value = a;
@@ -270,9 +356,14 @@ function renderPalette() {
 
 function setDesc() {
   const g = ui.selected;
-  $('gateDesc').textContent = g
-    ? `${GATES[g].name} — ${GATES[g].desc}`
-    : 'Bir kapı seç, sonra devrede bir hücreye tıkla. Kapıya tekrar tıklayınca silinir.';
+  const d = $('gateDesc');
+  if (!g) { d.textContent = t('gate.pick'); return; }
+  d.replaceChildren();
+  const b = document.createElement('b');
+  b.textContent = gateName(g);
+  const rest = document.createElement('span');
+  setRich(rest, ` — ${gateDesc(g)}`);
+  d.append(b, rest);
 }
 
 function selectGate(g) {
@@ -289,7 +380,7 @@ function renderSide() {
   const card = document.createElement('div');
   card.className = 'card';
   if (ui.mode === 'sandbox') {
-    card.innerHTML = '<h3>Kübit sayısı</h3>';
+    card.innerHTML = `<h3>${t('side.qubits')}</h3>`;
     const qc = document.createElement('div');
     qc.className = 'qcount';
     for (let k = 1; k <= 4; k++) {
@@ -308,24 +399,28 @@ function renderSide() {
     card.appendChild(qc);
     const p = document.createElement('p');
     p.className = 'fine';
-    p.textContent = 'Her kapı serbest. Kendi durumlarını keşfet, sesini dinle, bağlantıyla paylaş.';
+    p.textContent = t('side.labNote');
     card.appendChild(p);
     card.appendChild(noisePanel());
   } else {
-    card.innerHTML = '<h3>Bölümler</h3>';
+    card.innerHTML = `<h3>${t('side.levels')}</h3>`;
     const list = document.createElement('div');
     list.className = 'levels';
     LEVELS.forEach((lv, i) => {
       if (lv.chapter !== LEVELS[i - 1]?.chapter) {
+        const inCh = LEVELS.filter((l) => l.chapter === lv.chapter);
+        const got = inCh.reduce((a, l) => a + (ui.progress[l.id] || 0), 0);
         const h = document.createElement('h4');
-        h.textContent = lv.chapter;
+        h.innerHTML = '<span></span><span class="chbar"><i></i></span>';
+        h.firstChild.textContent = chapterName(lv.chapter);
+        h.querySelector('i').style.width = `${(got / (inCh.length * 3)) * 100}%`;
         list.appendChild(h);
       }
       const b = document.createElement('button');
-      if (i === ui.levelIdx && ui.mode === 'level' && !ui.custom) b.className = 'on';
+      if (i === ui.levelIdx && ui.mode === 'level' && !ui.custom) { b.className = 'on'; b.setAttribute('aria-current', 'true'); }
       const stars = ui.progress[lv.id] || 0;
-      b.innerHTML = `<span><span class="num">${i + 1}</span><span class="ttl"></span></span><span class="st">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>`;
-      b.querySelector('.ttl').textContent = lv.title;
+      b.innerHTML = `<span class="num">${i + 1}</span><span class="ttl"></span><span class="st" aria-label="${stars}/3 ★">${[0, 1, 2].map((k) => `<i class="${k < stars ? 'f' : ''}"></i>`).join('')}</span>`;
+      b.querySelector('.ttl').textContent = lvText(lv, 'title');
       b.addEventListener('click', () => { setMode('level'); loadLevel(i); });
       list.appendChild(b);
     });
@@ -337,8 +432,8 @@ function renderSide() {
     });
     const total = Object.values(ui.progress).reduce((a, b) => a + b, 0);
     const p = document.createElement('p');
-    p.className = 'fine';
-    p.textContent = `Toplam ★ ${total} / ${LEVELS.length * 3}`;
+    p.className = 'total';
+    p.textContent = t('side.total', { a: total, b: LEVELS.length * 3 });
     card.appendChild(p);
   }
   side.appendChild(card);
@@ -347,10 +442,10 @@ function renderSide() {
 function noisePanel() {
   const box = document.createElement('div');
   box.className = 'noise';
-  box.innerHTML = '<h3>Gürültü</h3>';
+  box.innerHTML = `<h3>${t('noise.title')}</h3>`;
   const sel = document.createElement('select');
-  sel.setAttribute('aria-label', 'Gürültü türü');
-  for (const [k, name] of [['yok', 'Kapalı (ideal donanım)'], ...Object.entries(CHANNELS).map(([k, c]) => [k, c.name])]) {
+  sel.setAttribute('aria-label', t('noise.kind'));
+  for (const [k, name] of [['yok', t('noise.off')], ...Object.keys(CHANNELS).map((k) => [k, chName(k)])]) {
     const o = document.createElement('option');
     o.value = k; o.textContent = name; o.selected = ui.noise.kind === k;
     sel.appendChild(o);
@@ -359,7 +454,7 @@ function noisePanel() {
   lab.className = 'noise-p';
   const range = document.createElement('input');
   Object.assign(range, { type: 'range', min: 0, max: 0.3, step: 0.01, value: ui.noise.p });
-  range.setAttribute('aria-label', 'Kapı başına gürültü olasılığı');
+  range.setAttribute('aria-label', t('noise.p'));
   const out = document.createElement('output');
   const desc = document.createElement('p');
   desc.className = 'fine';
@@ -367,9 +462,7 @@ function noisePanel() {
     out.textContent = `p = ${Math.round(ui.noise.p * 100)}%`;
     const on = ui.noise.kind !== 'yok';
     lab.hidden = !on;
-    desc.textContent = on
-      ? `${CHANNELS[ui.noise.kind].desc} Her kapıdan sonra, kapının dokunduğu her kübite uygulanır.`
-      : 'Gerçek kuantum bilgisayarlar kusursuz değil. Bir gürültü türü seç ve Bloch oklarının nasıl küçüldüğünü izle.';
+    desc.textContent = on ? t('noise.applied', { desc: chDesc(ui.noise.kind) }) : t('noise.intro');
   };
   sel.addEventListener('change', () => { ui.noise.kind = sel.value; sync(); update(); });
   range.addEventListener('input', () => { ui.noise.p = +range.value; sync(); update(); });
@@ -382,68 +475,45 @@ function noisePanel() {
 function renderStory() {
   const st = $('story');
   st.replaceChildren();
+  st.removeAttribute('data-num');
   const h = document.createElement('h2');
   const p = document.createElement('p');
   if (ui.mode === 'help') { renderHelp(st); return; }
   if (ui.mode === 'sandbox') {
-    h.textContent = 'Serbest Laboratuvar';
-    p.textContent = 'Kural yok. On iki kapı, dört kübite kadar, on iki sütun. Bir GHZ durumu kur ve dinle; Ry ile olasılıkları ayarla; ya da Rz ile fazları döndürüp renk tekerleğini gez.';
+    h.textContent = t('lab.title');
+    p.textContent = t('lab.story');
+    st.dataset.num = 'ψ';
     st.append(h, p);
     return;
   }
   const lv = level();
-  h.textContent = ui.custom ? `🎯 ${lv.title}` : `${ui.levelIdx + 1}. ${lv.title}`;
-  p.textContent = lv.story;
-  const meta = document.createElement('p');
-  meta.className = 'hint';
-  meta.textContent = lv.oracle
-    ? `${lv.oracle.boxes
-      ? `Gizli kutular ${lv.oracle.boxes.map((b) => `${b.col + 1}.`).join(' ve ')} sütunlarda kilitli`
-      : `Gizli kutu ${lv.oracle.col + 1}. sütunda kilitli`} · ideal: ${lv.par} kapı`
-    : `Hedef: ${formatState(ui.target)} · ideal: ${lv.par} kapı`;
+  const chap = document.createElement('p');
+  chap.className = 'chapter';
+  chap.textContent = ui.custom ? '◎' : `${chapterName(lv.chapter)} · ${ui.levelIdx + 1}/${LEVELS.length}`;
+  st.dataset.num = ui.custom ? '◎' : ui.levelIdx + 1;
+  h.textContent = lvText(lv, 'title');
+  setRich(p, lvText(lv, 'story'));
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const chip = (text, cls = '') => { const c = document.createElement('span'); c.className = `tagchip ${cls}`; c.textContent = text; meta.appendChild(c); };
+  if (lv.oracle) {
+    chip(lv.oracle.boxes
+      ? t('story.boxes', { cols: lv.oracle.boxes.map((b) => b.col + 1).join(t('story.and')) })
+      : t('story.box', { col: lv.oracle.col + 1 }));
+  } else chip(t('story.target', { state: formatState(ui.target) }), 'ket');
+  chip(t('story.par', { k: lv.par }));
   const det = document.createElement('details');
-  det.innerHTML = '<summary>İpucu</summary>';
+  const sum = document.createElement('summary');
+  sum.textContent = t('story.hint');
   const hp = document.createElement('p');
-  hp.className = 'hint';
-  hp.textContent = lv.hint;
-  det.appendChild(hp);
-  st.append(h, p, meta, det);
+  setRich(hp, lvText(lv, 'hint'));
+  det.append(sum, hp);
+  st.append(chap, h, p, meta, det);
 }
 
 function renderHelp(st) {
   st.classList.add('help');
-  st.innerHTML = `
-    <h2>Ekrandaki her şeyi nasıl okursun?</h2>
-    <h3>Genlik çemberleri</h3>
-    <p>n kübitlik bir sistem 2ⁿ tane karmaşık sayıyla (genlik) tanımlanır. Her çember bir taban durumudur, örneğin <code>|01⟩</code>.
-    Dolu dairenin <b>boyutu</b> genliğin büyüklüğüdür; ölçünce o sonucu görme olasılığı bunun karesidir.
-    <b>Renk ve ibre</b> fazı gösterir: sağ = +1, yukarı = +i, sol = −1, aşağı = −i.</p>
-    <h3>Faz neden önemli?</h3>
-    <p>Ölçüm fazı görmez, ama faz <b>girişimi</b> belirler. <i>Girişim</i> bölümünde H·Z·H dizisi fazı olasılığa çevirir: kuantum algoritmalarının çoğu bu numaraya dayanır.</p>
-    <h3>Bloch küreleri</h3>
-    <p>Her küre tek bir kübitin, diğerlerinden bağımsız bakıldığında nasıl göründüğünü çizer. Ok kürenin yüzeyindeyse kübit "kendi başına" tanımlıdır.
-    Ok kısalıyorsa (pembe) kübit başkalarıyla <b>dolanıktır</b>: bilgisi tek başına değil, ilişkide saklıdır. Bell çiftinde ok tamamen kaybolur.</p>
-    <h3>Zaman kaydırıcısı</h3>
-    <p>Devreyi adım adım oynat: kaydırıcıyı geri çektiğinde o ana kadarki durumu görürsün.</p>
-    <h3>Sesli mod</h3>
-    <p>Her taban durumu pentatonik bir notadır. Ses şiddeti olasılığı, stereo konumu fazı izler. Süperpozisyon bir akor gibi duyulur, ölçüm tek notaya çöker.</p>
-    <h3>Döndürme kapıları</h3>
-    <p>Rx, Ry ve Rz, kübiti Bloch küresinde bir eksen etrafında istediğin θ açısıyla döndürür. H, X, S, T gibi kapılar aslında bunların özel açılarıdır (global faz farkıyla). Ry ile ölçüm olasılıklarını istediğin orana ayarlayabilirsin: P(1) = sin²(θ/2).</p>
-    <h3>Kontrollü faz ve Fourier</h3>
-    <p>CP(θ), iki kübit de |1⟩ iken e^{iθ} fazı ekler; devrede iki nokta ve aradaki açı etiketiyle görünür. Kuantum Fourier dönüşümü bu kapılardan kurulur ve Shor algoritmasındaki faz kestiriminin temelidir.</p>
-    <h3>Gürültü modu</h3>
-    <p>Serbest Laboratuvar'da gerçek donanımın kusurlarını açabilirsin. Simülatör o zaman durum vektörü yerine <b>yoğunluk matrisi</b> ρ ile çalışır ve her kapıdan sonra seçtiğin kanalı uygular: <i>depolarize</i> (rastgele Pauli hataları), <i>genlik sönümü</i> (T1: enerji kaybı) ya da <i>faz bozulması</i> (T2: faz bilgisinin kaybı). Saflık tr(ρ²) 1'den düştükçe durum "klasikleşir". Bugünkü kuantum bilgisayarların hata düzeltmeye neden bu kadar ihtiyaç duyduğunu burada görebilirsin.</p>
-    <h3>Meydan okuma</h3>
-    <p>Laboratuvarda bir durum kur ve <b>🎯 Meydan oku</b> düğmesine bas. Kopyalanan bağlantıyı açan kişi hedef durumu görür ama devreyi görmez; aynı kapılarla aynı durumu kurmaya çalışır.</p>
-    <h3>Toffoli ve hata düzeltme</h3>
-    <p>Toffoli (CCX) kapısı iki kontrol kübiti de |1⟩ iken hedefi çevirir; kuantum bir VE kapısıdır. <i>Bit-Çevirme Kodu</i> bölümünde bunu çoğunluk oyu için kullanırsın: bir kübitin bilgisi üç kübite yayılır, biri bozulsa bile diğer ikisi onu düzeltir. Gerçek kuantum bilgisayarlar bu fikrin çok daha büyük sürümlerine (yüzey kodları) dayanır.</p>
-    <h3>Gizli kutular</h3>
-    <p>Algoritmalar kısmında içini göremediğin kilitli kutular var. <b>Kehanet</b> (İng. <i>oracle</i>) kutuları gizli bir fonksiyonu saklar: Deutsch, Bernstein–Vazirani ve Grover algoritmaları onu klasik bir bilgisayardan daha az sorgulayarak çözer. <b>Mesaj</b> ve <b>ψ</b> kutuları ise sana bilinmeyen bir mesaj ya da durum verir. Her durumda devren kutunun tüm olası hallerinde doğru çalışmalı. Sağdaki listeden bir hal seçip devreni onunla izleyebilirsin.</p>
-    <h3>OpenQASM ve gerçek donanım</h3>
-    <p><b>⟨/⟩ QASM</b> düğmesi devreni kuantum programlamanın endüstri standardı olan OpenQASM 2/3 diline çevirir. Bu kodu IBM Quantum Platform'un ücretsiz planında ya da Qiskit, Cirq, Amazon Braket gibi araçlarda çalıştırabilirsin. Dolanık'ın simülatörü her güncellemede Qiskit'e karşı otomatik olarak test edilir.</p>
-    <h3>Dürüstlük notu</h3>
-    <p>Bu bir simülasyondur: tarayıcın durum vektörünü tam olarak hesaplar. Sonuçlar gerçek bir kuantum bilgisayarla aynı olasılıkları verir, ama 4 kübitin ötesinde klasik simülasyonun maliyeti üstel olarak büyür. Gerçek kuantum avantajı tam olarak buradan gelir.</p>
-  `;
+  st.innerHTML = t('help.html');
 }
 
 // ---------- durum güncelleme ----------
@@ -484,7 +554,7 @@ function update({ silent = false } = {}) {
   ui.lastHit = null;
   animateTo(s);
   $('stateText').textContent = formatState(s);
-  $('stepOut').textContent = ui.step >= COLS ? 'tümü' : `${ui.step}/${COLS}`;
+  $('stepOut').textContent = ui.step >= COLS ? t('ctl.all') : `${ui.step}/${COLS}`;
 
   // Bloch küreleri
   const wrap = $('blochs');
@@ -504,19 +574,20 @@ function update({ silent = false } = {}) {
     drawBloch(f.querySelector('canvas'), v);
     const S = rho ? entropyFromBloch(v) : entanglementEntropy(s, q);
     ents.push(S);
-    f.querySelector('figcaption').textContent = `q${q} · |r| = ${Math.hypot(v.x, v.y, v.z).toFixed(2)} · ${rho ? 'entropi' : 'dolanıklık'} ${S.toFixed(2)} bit`;
+    const cap = f.querySelector('figcaption');
+    cap.innerHTML = `<b>q${q}</b> · |r| = ${Math.hypot(v.x, v.y, v.z).toFixed(2)}<br>${rho ? t('v.entropy') : t('v.entangle')} ${S.toFixed(2)} bit`;
   }
   const info = $('noiseInfo');
   info.hidden = !rho;
   if (rho) {
-    info.textContent = `Gürültülü donanımda: ideal duruma benzerlik ${(rhoFidelity(rho, s) * 100).toFixed(1)}%, saflık tr(ρ²) = ${purity(rho).toFixed(3)}. Yukarıdaki çemberler ideal durumu, Bloch küreleri ve ölçümler gürültülü sonucu gösterir.`;
+    info.textContent = t('v.noiseInfo', { f: (rhoFidelity(rho, s) * 100).toFixed(1), p: purity(rho).toFixed(3) });
   }
   const maxEnt = Math.max(...ents);
-  $('entNote').textContent = rho ? 'Gürültü açık: oklar hem dolanıklık hem de çevreyle etkileşim (dekoherans) yüzünden kısalır. Entropi artık ikisini birlikte ölçer.'
-    : n < 2 ? 'Tek kübit: dolanıklık için en az iki kübit gerekir.'
-    : maxEnt > 0.99 ? 'Maksimum dolanıklık! Kübitlerin tek tek bilgisi kalmadı; her şey ilişkide.'
-      : maxEnt > 0.01 ? 'Kısmen dolanık: oklar kürenin içine çekiliyor.'
-        : 'Çarpım durumu: her kübit kendi başına tanımlı.';
+  $('entNote').textContent = rho ? t('ent.noise')
+    : n < 2 ? t('ent.single')
+      : maxEnt > 0.99 ? t('ent.max')
+        : maxEnt > 0.01 ? t('ent.partial')
+          : t('ent.product');
 
   // hedef
   if (ui.mode === 'level') {
@@ -526,13 +597,13 @@ function update({ silent = false } = {}) {
     renderVariants(lv, r);
     if (!lv.oracle) drawAmplitudes($('target'), ui.target);
     $('fid').textContent = lv.oracle
-      ? `${r.checks.filter((c) => c.ok).length}/${r.checks.length} durum çözüldü`
-      : `benzerlik ${(r.score * 100).toFixed(1)}%`;
+      ? t('v.solved', { a: r.checks.filter((c) => c.ok).length, b: r.checks.length })
+      : t('v.fid', { p: (r.score * 100).toFixed(1) });
     $('fidBar').style.width = `${(r.score * 100).toFixed(1)}%`;
     if (r.solved && !ui.won && playerGateCount(ui.ops)) { ui.won = true; setTimeout(win, 350); }
   }
   renderCircuit();
-  $('hist').innerHTML = '<span class="empty">Ölçüm yapınca sonuçlar burada belirir.</span>';
+  $('hist').innerHTML = `<span class="empty">${t('m.empty')}</span>`;
   if (!silent && $('autoSound').checked) playState(s);
   if (ui.mode === 'sandbox') writeHash();
 }
@@ -545,13 +616,12 @@ function renderVariants(lv, r) {
   const orc = oracleOf(lv);
   const p = document.createElement('p');
   p.className = 'fine';
-  p.textContent = 'Kutunun içi gizli. Devren aşağıdaki olasılıkların hepsinde doğru sonucu vermeli. Birine tıklayıp devreni o haliyle izle:';
+  p.textContent = t('v.variantsIntro');
   box.appendChild(p);
   orc.variants.forEach((v, i) => {
     const b = document.createElement('button');
     b.className = `chip${i === ui.variant ? ' on' : ''}${r.checks[i].ok ? ' ok' : ''}`;
-    const want = ` → ${v.goal}`;
-    b.textContent = `${r.checks[i].ok ? '✓' : '○'} ${v.name}${want}`;
+    b.textContent = `${tx(v.name)} → ${tx(v.goal)}`;
     b.setAttribute('aria-pressed', i === ui.variant);
     b.addEventListener('click', () => { ui.variant = i; update(); });
     box.appendChild(b);
@@ -564,18 +634,20 @@ function win() {
   const stars = starsFor(lv, ui.ops);
   const prev = ui.progress[lv.id] || 0;
   if (!ui.custom && stars > prev) { ui.progress[lv.id] = stars; store.set('dolanik.progress', ui.progress); }
-  $('winStars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
-  $('winTitle').textContent = ui.custom ? 'Meydan okumayı kazandın!' : ui.levelIdx === LEVELS.length - 1 ? 'Tüm bölümler bitti!' : 'Başardın!';
-  $('winText').textContent = `${used} kapı kullandın (ideal: ${lv.par}). ${stars < 3 ? 'Daha az kapıyla tekrar dene?' : 'Kusursuz devre.'}`;
+  $('winStars').innerHTML = [0, 1, 2].map((k) => `<span class="${k < stars ? 'f' : ''}">✦</span>`).join('');
+  $('winStars').setAttribute('aria-label', `${stars}/3`);
+  $('winTitle').textContent = ui.custom ? t('win.challenge') : ui.levelIdx === LEVELS.length - 1 ? t('win.allDone') : t('win.title');
+  $('winText').textContent = t('win.text', { k: used, par: lv.par, extra: stars < 3 ? t('win.retry') : t('win.perfect') });
   $('next').hidden = !!ui.custom || ui.levelIdx >= LEVELS.length - 1;
   $('win').hidden = false;
+  burst($('burst'));
   playState(runCircuit(lv.n, playableOps()), 2.4);
   renderSide();
   $('next').focus();
 }
 
 // ---------- ölçüm ----------
-function renderHist(counts, hit) {
+function renderHist(counts, hit, amps = null) {
   const total = counts.reduce((a, b) => a + b, 0);
   const max = Math.max(...counts, 1);
   const n = nQubits();
@@ -590,6 +662,7 @@ function renderHist(counts, hit) {
     cnt.textContent = c || '';
     const fill = document.createElement('div');
     fill.className = `fill${i === hit ? ' hit' : ''}`;
+    if (amps) fill.style.setProperty('--bar', `hsl(${((Math.atan2(amps.im[i], amps.re[i]) * 180) / Math.PI + 360) % 360} 85% 55%)`);
     fill.style.height = '0%';
     const lab = document.createElement('span');
     lab.className = 'lab';
@@ -605,19 +678,22 @@ function measureOnce() {
   const k = noiseOn() ? sampleRho(noisyRho()) : sample(s);
   const counts = new Array(s.re.length).fill(0);
   counts[k] = 1;
-  renderHist(counts, k);
+  renderHist(counts, k, s);
   ui.lastHit = k;
   drawAmplitudes($('amps'), s, { highlight: k });
+  const card = $('stateCard');
+  card.classList.remove('collapse'); void card.offsetWidth; card.classList.add('collapse');
   // ölçüm sonrası çöken durumu sesle duyur
   if ($('autoSound').checked) {
     const collapsed = zeroState(s.n); collapsed.re[0] = 0; collapsed.re[k] = 1;
     playState(collapsed, 0.9);
   }
-  toast(`Sonuç: ${ketLabel(k, s.n)} — durum bu sonuca çöktü (devre değişmedi).`);
+  toast(t('toast.result', { ket: ketLabel(k, s.n) }));
 }
 
 function measureMany() {
-  renderHist(noiseOn() ? measureShotsRho(noisyRho(), 256) : measureShots(currentState(), 256), null);
+  const s = currentState();
+  renderHist(noiseOn() ? measureShotsRho(noisyRho(), 256) : measureShots(s, 256), null, s);
 }
 
 // ---------- paylaşım (yalnızca laboratuvar) ----------
@@ -671,7 +747,7 @@ const b64 = {
 
 function challengeLink() {
   const used = ui.ops.filter((o) => !o.locked);
-  if (!used.length) { toast('Önce devreye birkaç kapı koy.'); return null; }
+  if (!used.length) { toast(t('toast.needGates')); return null; }
   return `${location.origin}${location.pathname}#meydan=${b64.enc(`${ui.sandboxN}~${encodeOps(used)}`)}`;
 }
 
@@ -687,10 +763,7 @@ function loadChallenge(code) {
   const gates = Object.keys(GATES).filter((g) => ops.some((o) => o.g === g));
   ui.custom = {
     id: 'meydan',
-    title: 'Meydan Okuma',
     chapter: '',
-    story: `Bir arkadaşın ${n} kübitle bu durumu kurdu ve sana meydan okuyor: aynısını kurabilir misin? Yalnızca onun kullandığı kapılar elinde. O, ${ops.length} kapı kullandı.`,
-    hint: 'Hedefteki çemberlerin boyutuna (olasılık) ve rengine (faz) bak. Bloch oklarının kısalması dolanıklığı ele verir.',
     n, gates, par: ops.length,
     target: Array.from(s.re, (r, i) => [r, s.im[i]]),
   };
@@ -706,7 +779,20 @@ function setMode(mode) {
   $('step').value = COLS;
   document.body.className = `mode-${mode}`;
   $('story').classList.remove('help');
-  for (const b of document.querySelectorAll('.modes button')) b.classList.toggle('on', b.dataset.mode === mode);
+  for (const b of document.querySelectorAll('.modes button')) {
+    b.classList.toggle('on', b.dataset.mode === mode);
+    b.setAttribute('aria-selected', b.dataset.mode === mode);
+  }
+  moveThumb();
+}
+
+// kayan mod göstergesi
+function moveThumb() {
+  const on = document.querySelector('.modes button.on');
+  const nav = document.querySelector('.modes');
+  if (!on) return;
+  nav.style.setProperty('--x', `${on.offsetLeft}px`);
+  nav.style.setProperty('--w', `${on.offsetWidth}px`);
 }
 
 function loadLevel(i) {
@@ -769,17 +855,13 @@ $('m1').addEventListener('click', measureOnce);
 $('m256').addEventListener('click', measureMany);
 $('share').addEventListener('click', async () => {
   writeHash();
-  try { await navigator.clipboard.writeText(location.href); toast('Bağlantı kopyalandı.'); } catch { toast('Adres çubuğundaki bağlantıyı paylaşabilirsin.'); }
+  try { await navigator.clipboard.writeText(location.href); toast(t('toast.linkCopied')); } catch { toast(t('toast.linkBar')); }
 });
 // ---------- OpenQASM ----------
 function qasmText() {
   const v = variantObj();
   const version = +$('qasmVer').value;
-  const comment = [
-    'Dolanık ile oluşturuldu.',
-    'Not: burada q[0], Dolanık\'taki ket yazımının EN SOLUNDAKİ kübittir.',
-    ...(v ? [`Kehanet kutusu "${v.name}" varyantıyla açıldı.`] : []),
-  ].join('\n');
+  const comment = [t('qasm.c1'), t('qasm.c2'), ...(v ? [t('qasm.c3', { v: tx(v.name) })] : [])].join('\n');
   return toQasm(nQubits(), playableOps(), { version, comment });
 }
 function openQasm() {
@@ -791,7 +873,7 @@ function openQasm() {
 $('qasm').addEventListener('click', openQasm);
 $('qasmVer').addEventListener('change', () => { $('qasmCode').value = qasmText(); });
 $('qasmCopy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText($('qasmCode').value); toast('OpenQASM kodu kopyalandı.'); } catch { $('qasmCode').select(); }
+  try { await navigator.clipboard.writeText($('qasmCode').value); toast(t('toast.qasmCopied')); } catch { $('qasmCode').select(); }
 });
 $('qasmClose').addEventListener('click', () => $('qasmDlg').close());
 $('qasmImport').addEventListener('click', () => {
@@ -803,16 +885,16 @@ $('qasmImport').addEventListener('click', () => {
     ui.shown = zeroState(n);
     $('qasmDlg').close();
     renderAll();
-    toast(`${ops.length} kapı içe aktarıldı.`);
+    toast(t('toast.imported', { k: ops.length }));
   } catch (err) {
-    $('qasmErr').textContent = err.message;
+    $('qasmErr').textContent = err.key ? t(`qasm.e.${err.key}`, err.params) : err.message;
   }
 });
 
 $('challenge').addEventListener('click', async () => {
   const link = challengeLink();
   if (!link) return;
-  try { await navigator.clipboard.writeText(link); toast('Meydan okuma bağlantısı kopyalandı. Arkadaşına gönder!'); } catch { prompt('Bu bağlantıyı paylaş:', link); }
+  try { await navigator.clipboard.writeText(link); toast(t('toast.challengeCopied')); } catch { prompt(t('prompt.share'), link); }
 });
 
 $('stay').addEventListener('click', () => { $('win').hidden = true; });
@@ -841,9 +923,29 @@ document.addEventListener('keydown', (e) => {
 });
 
 let rz;
-window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => ui.mode !== 'help' && update({ silent: true }), 120); });
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { moveThumb(); if (ui.mode !== 'help') update({ silent: true }); }, 120); });
+
+$('langBtn').addEventListener('click', () => {
+  setLang(isEn() ? 'tr' : 'en');
+  store.set('dolanik.lang', getLang());
+  applyStaticText();
+  moveThumb();
+  renderAll();
+});
+$('themeBtn').addEventListener('click', () => {
+  const dark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+  store.set('dolanik.theme', document.documentElement.dataset.theme);
+  if (ui.mode !== 'help') update({ silent: true });
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ui.mode !== 'help' && update({ silent: true }));
 
 // ---------- başlat ----------
+applyStaticText();
+startEbru($('ebru'));
+document.fonts?.ready.then(() => { moveThumb(); if (ui.mode !== 'help') update({ silent: true }); });
 const fromHash = readHash();
 if (fromHash === 'challenge') {
   startChallenge();

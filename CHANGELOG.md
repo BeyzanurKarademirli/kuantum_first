@@ -1,5 +1,18 @@
 # Değişiklik günlüğü
 
+## 0.6.0 — 2026-11-19
+- Yeni görsel kimlik "Ebru": arka planda canlı dalga girişimi (faz renkleriyle), kâğıt-mürekkep paleti,
+  yaprak köşeler ve baskı gölgeleri, mürekkep taşı kapı tuşları, dönen faz halkası, kayan mod göstergesi,
+  kısım ilerleme çubukları, yeni genlik ve Bloch çizimleri.
+- Animasyonlar: kapı yerleşme dalgası, kablolarda sinyal akışı, ölçüm çökmesi, kazanma patlaması,
+  sırayla beliren yıldızlar. "Hareketi azalt" tercihine uyulur.
+- Gömülü yazı tipleri: Fraunces, Manrope, JetBrains Mono (SIL OFL; dış istek yok).
+- İngilizce dil desteği: tüm arayüz, 26 bölüm, yardım, kapılar, gürültü kanalları, gizli kutu
+  senaryoları ve QASM hataları. Dil tarayıcıdan algılanır, seçim hatırlanır.
+- Elle açık/koyu tema seçimi.
+- Metindeki ket'ler (|01⟩) eşit aralıklı etiketlerle gösteriliyor; gizli kutu etiketlerinde alt simge.
+- Çeviri bütünlüğü testleri (63 test).
+
 ## 0.5.0 — 2026-11-19
 - Toffoli (CCX) kapısı: üç tıklamayla yerleşim (iki kontrol, bir hedef), QASM `ccx`, gürültü desteği.
 - Yeni "Hata Düzeltme" kısmı: Bit-Çevirme Kodu (2 bilinmeyen durum × 4 hata senaryosu). Toplam 26 bölüm.

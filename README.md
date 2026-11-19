@@ -6,6 +6,17 @@ dolanıklığın Bloch kürelerindeki okları nasıl "yuttuğunu" gör.
 
 Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi tarayıcında saklanır.
 
+**Oyna:** https://beyzanurkarademirli.github.io/kuantum_first/ · **Türkçe / English**
+
+## Tasarım: "Ebru"
+
+Arka plandaki akışkan desen süs değil, gerçek bir fizik: üç hareketli dalga kaynağının girişimi,
+oyunun faz renk tekerleğiyle boyanmış (ebru sanatının kuantum hali). Kâğıt-mürekkep paleti,
+yaprak köşeli butonlar, baskı gölgeleri, basınca gömülen kapı tuşları, seçili kapının çevresinde
+dönen faz halkası, kapı yerleşince dalga halkası, kablolarda akan sinyal, ölçümde çökme efekti ve
+kazanınca faz renkli parçacık patlaması. Yazı tipleri (Fraunces, Manrope, JetBrains Mono, SIL OFL)
+siteyle birlikte gelir: dışarıya tek bir istek bile atılmaz. "Hareketi azalt" tercihine uyulur.
+
 ## Neler var?
 
 - **6 kısımda 26 bölüm** — *Temeller*, *Dolanıklık*, *Döndürmeler*, *Algoritmalar*, *Fourier*, *Hata Düzeltme*. Tek bit çevirmekten
@@ -20,6 +31,8 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 - **Gürültü modu** — yoğunluk matrisi simülatörü; depolarize, genlik sönümü (T1) ve faz bozulması (T2)
   kanalları. Bloch oklarının dekoheransla küçülüşünü, saflığın düşüşünü ve hatalı ölçümleri gör.
 - **Meydan okuma bağlantıları** — laboratuvarda kurduğun durumu bulmaca olarak arkadaşına gönder.
+- **İki dil** — Türkçe ve İngilizce; tarayıcı diline göre kendiliğinden seçilir, tek tıkla değişir.
+- **Açık ve koyu tema** — sistem tercihine uyar, elle de değiştirilebilir.
 - **OpenQASM 2.0 / 3.0** — devreni endüstri standardı dile aktar, IBM Quantum, Qiskit, Cirq ya da
   Amazon Braket'te (gerçek donanım dahil) çalıştır. Başka yerde yazılmış QASM kodunu içe aktar.
 - **Serbest Laboratuvar** — 4 kübite kadar, 12 sütun, bütün kapılar.
@@ -76,6 +89,8 @@ node scripts/export-fixtures.mjs > fixtures.json && python tests/qiskit/verify.p
 | `js/levels.js` | Bölümler ve hedef durumlar |
 | `js/game.js` | Kehanet kutuları, bölüm değerlendirme, yıldızlar |
 | `js/noise.js` | Yoğunluk matrisi simülatörü ve gürültü kanalları |
+| `js/i18n.js`, `js/strings.js`, `js/levels-en.js` | Çeviri katmanı ve metinler |
+| `js/ebru.js` | Arka plandaki dalga girişimi ve kazanma patlaması |
 | `js/qasm.js` | OpenQASM 2/3 dışa-içe aktarma (ASAP katmanlama) |
 | `js/viz.js` | Canvas çizimleri: genlik çemberleri, Bloch küreleri |
 | `js/audio.js` | Web Audio ile "süperpozisyonu dinle" |
@@ -104,7 +119,8 @@ bilgisayarla aynı olasılık dağılımlarını verir. Ama klasik simülasyonun
 - [ ] Faz-çevirme kodu ve gürültü modunda kodlu/kodsuz karşılaştırma
 - [ ] Orta-devre ölçümü ve klasik kontrol
 - [x] Gürültü modu: dekoherans kürenin içine nasıl çeker?
-- [ ] İngilizce dil seçeneği
+- [x] İngilizce dil seçeneği
+- [x] Özgün görsel kimlik ("Ebru" tasarımı)
 - [x] Kendi bölümünü tasarla ve bağlantıyla paylaş (meydan okuma)
 
 ## Lisans

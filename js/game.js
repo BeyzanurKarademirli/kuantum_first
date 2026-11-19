@@ -42,17 +42,17 @@ export const ORACLES = {
   deutsch: {
     label: 'U_f',
     variants: [
-      { name: 'f(x) = 0', goal: 'sabit: q0 = 0', ops: [], expect: 0 },
-      { name: 'f(x) = 1', goal: 'sabit: q0 = 0', ops: [{ g: 'X', q: 1 }], expect: 0 },
-      { name: 'f(x) = x', goal: 'dengeli: q0 = 1', ops: [{ g: 'CNOT', q: 0, q2: 1 }], expect: 1 },
-      { name: 'f(x) = ¬x', goal: 'dengeli: q0 = 1', ops: [{ g: 'CNOT', q: 0, q2: 1 }, { g: 'X', q: 1 }], expect: 1 },
+      { name: 'f(x) = 0', goal: { tr: 'sabit: q0 = 0', en: 'constant: q0 = 0' }, ops: [], expect: 0 },
+      { name: 'f(x) = 1', goal: { tr: 'sabit: q0 = 0', en: 'constant: q0 = 0' }, ops: [{ g: 'X', q: 1 }], expect: 0 },
+      { name: 'f(x) = x', goal: { tr: 'dengeli: q0 = 1', en: 'balanced: q0 = 1' }, ops: [{ g: 'CNOT', q: 0, q2: 1 }], expect: 1 },
+      { name: 'f(x) = ¬x', goal: { tr: 'dengeli: q0 = 1', en: 'balanced: q0 = 1' }, ops: [{ g: 'CNOT', q: 0, q2: 1 }, { g: 'X', q: 1 }], expect: 1 },
     ],
     score: (s, v) => marginalProb(s, [0], [v.expect]),
   },
   grover: {
     label: 'U_ω',
     variants: [0, 1, 2, 3].map((m) => ({
-      name: `ω = ${ketLabel(m, 2)}`, goal: `ölç: ${ketLabel(m, 2)}`, ops: groverOps(m), marked: m,
+      name: `ω = ${ketLabel(m, 2)}`, goal: { tr: `ölç: ${ketLabel(m, 2)}`, en: `measure: ${ketLabel(m, 2)}` }, ops: groverOps(m), marked: m,
     })),
     score: (s, v) => marginalProb(s, [0, 1], bitsOf(v.marked, 2)),
   },
@@ -74,8 +74,8 @@ export const ORACLES = {
     variants: [0, 1, 2, 3].map((m) => {
       const [b1, b2] = bitsOf(m, 2);
       return {
-        name: `mesaj ${bitStr(m, 2)}`,
-        goal: `ölç: ${ketLabel(m, 2)}`,
+        name: { tr: `mesaj ${bitStr(m, 2)}`, en: `message ${bitStr(m, 2)}` },
+        goal: { tr: `ölç: ${ketLabel(m, 2)}`, en: `measure: ${ketLabel(m, 2)}` },
         ops: [...(b2 ? [{ g: 'X', q: 0 }] : []), ...(b1 ? [{ g: 'Z', q: 0 }] : [])],
         message: m,
       };
@@ -103,7 +103,10 @@ export const ORACLES = {
   bitflip: {
     label: '?',
     variants: [PREPS[3], PREPS[0]].flatMap((p) => [null, 0, 1, 2].map((e) => ({
-      name: `ψ = ${p.name}, ${e == null ? 'hata yok' : `X hatası q${e}`}`,
+      name: {
+        tr: `ψ = ${p.name}, ${e == null ? 'hata yok' : `X hatası q${e}`}`,
+        en: `ψ = ${p.name}, ${e == null ? 'no error' : `X error on q${e}`}`,
+      },
       goal: 'q0 = ψ',
       parts: { prep: p.ops, err: e == null ? [] : [{ g: 'X', q: e }] },
       bloch: blochOfOps(p.ops),
@@ -188,7 +191,7 @@ export function evaluateLevel(level, ops) {
   const orc = oracleOf(level);
   if (!orc) {
     const f = fidelity(runCircuit(n, ops), stateFromAmplitudes(n, level.target));
-    return { score: f, solved: f > 0.999, checks: [{ name: 'hedef', ok: f > 0.999, value: f }] };
+    return { score: f, solved: f > 0.999, checks: [{ name: { tr: 'hedef', en: 'target' }, ok: f > 0.999, value: f }] };
   }
   const checks = orc.variants.map((v) => {
     const value = orc.score(runCircuit(n, expandOracle(ops, v)), v);
