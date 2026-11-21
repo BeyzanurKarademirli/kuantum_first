@@ -1,5 +1,14 @@
 # Değişiklik günlüğü
 
+## 0.11.0 — 2026-11-21
+- "Neden?" sekmesi: uygulamanın amacı, kimin için olduğu, bitirince neler yapılabileceği ve altı kısmın
+  yolculuk haritası (her kısımda zorluk, ilerleme, "Ne kazanırsın", "Gerçek dünyada", "Bu kısma git").
+- Her bölümün başında "Öğreneceğin" hedefi (26 bölüm, iki dil).
+- Kısım başlıklarında "?" düğmesi: kazanım ve gerçek dünyadaki karşılığı.
+- Rehber turun "Diğer modlar" adımı "Neden?" sekmesini de anlatıyor.
+- "Bu kısma git" sonrası sayfa başa kaydırılıyor (önceden bölümün ortasında kalınıyordu).
+- E2E: "Neden?" senaryosu eklendi (16 senaryo).
+
 ## 0.10.0 — 2026-11-19
 - Tarayıcı testleri (E2E) depoya ve CI'a eklendi: 15 kullanıcı senaryosu gerçek Chromium'da çalışır;
   geçmezse site yayına çıkmaz. Bağımlılık eklenmedi (yerleşik http sunucusu, CI'da Playwright).

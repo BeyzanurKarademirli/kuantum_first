@@ -55,7 +55,7 @@ async function put(page, n, gate, col, ...rows) {
 }
 async function goLevel(page, id) {
   const ids = await page.evaluate(async () => (await import('./js/levels.js')).LEVELS.map((l) => l.id));
-  await page.locator('.levels button').nth(ids.indexOf(id)).click();
+  await page.locator('.levels > button').nth(ids.indexOf(id)).click();
 }
 
 test('ilk ziyaret: karşılama → rehber tur 11 adım → yıldız verilmez', async () => {
@@ -111,7 +111,7 @@ test('bölüm çözme: yıldızlar, kural kartı, sonraki bölüm', async () => 
   await page.click('#stay');
   const progress = JSON.parse(await page.evaluate(() => localStorage.getItem('dolanik.progress')));
   assert.deepEqual(progress, { 'bit-cevir': 3, superpozisyon: 2 });
-  assert.equal(await page.locator('.levels button .st i.f').count(), 5);
+  assert.equal(await page.locator('.levels > button .st i.f').count(), 5);
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -270,14 +270,31 @@ test('mobil (390px): yatay taşma yok, "?" dokununca açılır, koyu tema hatas�
 
 test('bütün bölümler açılır ve konsol hatası vermez', async () => {
   const { page, ctx, errors } = await open();
-  const n = await page.locator('.levels button').count();
+  const n = await page.locator('.levels > button').count();
   assert.equal(n, 26);
   for (let i = 0; i < n; i++) {
-    await page.locator('.levels button').nth(i).click();
+    await page.locator('.levels > button').nth(i).click();
     await page.waitForFunction((i) => document.querySelector('#story .chapter').textContent.includes(`${i + 1}/26`), i);
   }
   await page.click('[data-mode=help]');
   assert.match(await page.textContent('#story h2'), /nasıl okursun/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('"Neden?" sekmesi: amaç, kazanımlar ve 6 kısımlık yolculuk; kısma git', async () => {
+  const { page, ctx, errors } = await open();
+  assert.match(await page.textContent('#story .objective'), /Öğreneceğin/);
+  await page.click('[data-mode=why]');
+  assert.match(await page.textContent('#story h2'), /neden var/);
+  assert.equal(await page.locator('.journey .stage').count(), 6);
+  assert.equal(await page.locator('.why-list li').count(), 5);
+  await page.locator('.stage-go').nth(3).click();
+  await page.waitForFunction(() => /Deutsch/.test(document.querySelector('#story h2').textContent));
+  // kısım başlığındaki "?" kazanımı anlatır
+  await page.hover('.levels h4 .info >> nth=0');
+  await page.waitForSelector('#tip.show');
+  assert.match(await page.textContent('#tip'), /Gerçek dünyada/);
   assert.deepEqual(errors, []);
   await ctx.close();
 });

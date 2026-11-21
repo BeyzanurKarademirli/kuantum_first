@@ -21,7 +21,9 @@ dil tarayıcıdan algılanır.
   fazı gösteren veride (genlik çemberleri, faz tekerleği) olur. Her bölüm başlığında bir "?" açıklaması bulunur. Yeni yazı tipi eklenecekse `fonts/` altına gömülür,
   dış kaynaktan yüklenmez. Yayın iş akışı `fonts/` klasörünü de kopyalar.
 - Her yeni bölüm için `tests/solutions.mjs` içine ideal kapı sayısında (`par`) bir çözüm, `levels.js` ve
-  `levels-en.js` içine bir `lesson` (öğrendiğin kural) ekle.
+  `levels-en.js` içine bir `goal` (öğreneceğin) ve bir `lesson` (öğrendiğin kural) ekle. Yeni bir kısım
+  eklersen `strings.js`'e `chgain.*` ve `chworld.*` (kazanım ve gerçek dünya) metinlerini, `levels.js`'teki
+  `DIFFICULTY`'ye zorluğunu ekle. Gerçek dünya iddiaları doğrulanabilir olmalı; abartma.
   Testler, her bölümün 3 yıldızla çözülebildiğini doğrular.
 - Fiziksel doğruluk pazarlıksız: yeni kapı veya özellik eklerken Qiskit fixture'larının da
   kapsamasını sağla (`scripts/export-fixtures.mjs`).

@@ -16,6 +16,7 @@ const RAW = [
     hint: 'X kapısı klasik NOT gibidir.',
     n: 1, gates: ['X'], target: [0, 1], par: 1,
     lesson: "X kapısı klasik NOT gibidir: |0⟩ ↔ |1⟩.",
+    goal: "Kübiti ve ilk kapını (X) tanımak.",
   },
   {
     id: 'superpozisyon',
@@ -24,6 +25,7 @@ const RAW = [
     hint: 'Hadamard tam bunun için var.',
     n: 1, gates: ['H', 'X'], target: [1, 1], par: 1,
     lesson: "H, |0⟩ durumunu eşit süperpozisyona taşır: ölçünce %50 0, %50 1.",
+    goal: "Bir kübitin aynı anda iki olasılığı birden taşıyabildiğini görmek.",
   },
   {
     id: 'eksi-dunya',
@@ -32,6 +34,7 @@ const RAW = [
     hint: 'Ya önce çevir sonra H, ya da H sonra fazı çevir.',
     n: 1, gates: ['H', 'X', 'Z'], target: [1, -1], par: 2,
     lesson: "Faz (eksi işareti) ölçümde görünmez, ama durumu gerçekten değiştirir.",
+    goal: "Ölçümün göremediği gizli bilgiyi, yani fazı tanımak.",
   },
   {
     id: 'hayali-yon',
@@ -40,6 +43,7 @@ const RAW = [
     hint: 'S kapısı |1⟩ bileşenini i ile çarpar.',
     n: 1, gates: ['H', 'S', 'Z'], target: [1, i], par: 2,
     lesson: "Genlikler karmaşık sayıdır; S kapısı |1⟩ bileşenine i fazı ekler.",
+    goal: "Fazın yalnızca artı ya da eksi olmadığını, her yöne dönebildiğini görmek.",
   },
   {
     id: 'sekizde-bir',
@@ -48,6 +52,7 @@ const RAW = [
     hint: 'T kapısı = 45° faz.',
     n: 1, gates: ['H', 'T', 'S'], target: [1, e4], par: 2,
     lesson: "T kapısı 45° fazdır ve fazlar toplanır: T·T = S, S·S = Z.",
+    goal: "Küçük faz adımlarının nasıl toplandığını görmek.",
   },
   {
     id: 'girisim',
@@ -56,6 +61,7 @@ const RAW = [
     hint: 'H · Z · H = X. Faz, girişimle olasılığa dönüşür.',
     n: 1, gates: ['H', 'Z'], target: [0, 1], par: 3,
     lesson: "Girişim fazı olasılığa çevirir: H·Z·H = X.",
+    goal: "Kuantum hesaplamanın asıl gücü olan girişimi ilk kez kullanmak.",
   },
   {
     id: 'bell',
@@ -64,6 +70,7 @@ const RAW = [
     hint: 'Birini süperpozisyona sok, sonra onu kontrol olarak kullan.',
     n: 2, gates: ['H', 'X', 'CNOT'], target: [1, 0, 0, 1], par: 2,
     lesson: "H ve ardından CNOT dolanıklık yaratır: kübitler tek tek rastgele, birlikte kusursuz uyumlu.",
+    goal: "İki kübiti birbirine dolanık hâle getirmek.",
   },
   {
     id: 'hadamard-yagmuru',
@@ -72,6 +79,7 @@ const RAW = [
     hint: 'Her kübite bir yağmur damlası.',
     n: 3, gates: ['H', 'X'], target: [1, 1, 1, 1, 1, 1, 1, 1], par: 3,
     lesson: "n kübite birer H, 2ⁿ durumun eşit süperpozisyonunu verir.",
+    goal: "Kübit eklendikçe olasılıkların nasıl katlanarak arttığını görmek.",
   },
   {
     id: 'kardes-bitler',
@@ -80,6 +88,7 @@ const RAW = [
     hint: 'Bell çifti kur, sonra birini çevir.',
     n: 2, gates: ['H', 'X', 'CNOT'], target: [0, 1, 1, 0], par: 3,
     lesson: "Dolanık çiftin yalnız bir yarısına X uygulamak, \"hep aynı\" uyumunu \"hep zıt\"a çevirir.",
+    goal: "Dolanık kübitler arasındaki ilişkiyi değiştirmek.",
   },
   {
     id: 'hayali-bell',
@@ -88,6 +97,7 @@ const RAW = [
     hint: 'Faz kapısını nereye koyduğun önemli mi? Dene!',
     n: 2, gates: ['H', 'S', 'CNOT'], target: [1, 0, 0, i], par: 3,
     lesson: "Dolanık bir çiftte faz, hangi kübite uygulanırsa uygulansın ortak duruma işler.",
+    goal: "Dolanık bir çiftin ortak fazını yönetmek.",
   },
   {
     id: 'gizli-faz',
@@ -96,6 +106,7 @@ const RAW = [
     hint: 'CZ, iki kübit de 1 iken eksi ekler.',
     n: 2, gates: ['H', 'CZ'], target: [1, 1, 1, -1], par: 3,
     lesson: "CZ yalnızca |11⟩ bileşeninin işaretini çevirir; iki kübite göre simetriktir.",
+    goal: "İki kübite birlikte faz eklemeyi öğrenmek.",
   },
   {
     id: 'singlet',
@@ -104,6 +115,7 @@ const RAW = [
     hint: 'Eksi işaretini dolanıklıktan önce koymak daha kolay.',
     n: 2, gates: ['H', 'X', 'Z', 'CNOT'], target: [0, 1, -1, 0], par: 4,
     lesson: "Dolanıklıktan önce eklenen bir işaret, dolanık duruma taşınır: |01⟩ − |10⟩.",
+    goal: "Fizikteki en ünlü dolanık durumu kurmak.",
   },
   {
     id: 'ghz',
@@ -112,6 +124,7 @@ const RAW = [
     hint: 'Bell çiftini bir kübit daha uzat.',
     n: 3, gates: ['H', 'CNOT'], target: [1, 0, 0, 0, 0, 0, 0, 1], par: 3,
     lesson: "CNOT zinciri dolanıklığı istediğin kadar kübite yayar.",
+    goal: "Dolanıklığı üç kübite yaymak.",
   },
   {
     id: 'takasci',
@@ -120,6 +133,7 @@ const RAW = [
     hint: 'Üç CNOT, yönleri değişerek, bir SWAP eder. Ama burada üst kübitin 0\'a dönmesi lazım…',
     n: 2, gates: ['X', 'CNOT'], allowedRows: { X: [0] }, target: [0, 1, 0, 0], par: 3,
     lesson: "Üç CNOT bir SWAP eder: bir kapı başka kapılarla yeniden kurulabilir.",
+    goal: "Eksik bir kapıyı başka kapılarla yeniden kurmak.",
   },
   {
     id: 'faz-labirenti',
@@ -128,6 +142,7 @@ const RAW = [
     hint: 'Ok uzunlukları 1 ise durum çarpım durumudur: her kübiti ayrı hazırla.',
     n: 2, gates: ['H', 'S', 'T', 'CNOT', 'CZ'], target: [1, i, 1, i], par: 3,
     lesson: "Bütün Bloch okları tam boydaysa durum dolanık değildir: kübitleri ayrı ayrı hazırlarsın.",
+    goal: "Bir durumun dolanık olup olmadığını Bloch kürelerinden okumak.",
   },
   {
     id: 'deutsch',
@@ -136,6 +151,7 @@ const RAW = [
     hint: 'q1\'i |−⟩ durumuna getir (X sonra H), q0\'ı süperpozisyona sok. Kutu, f(x)\'i faz olarak q0\'a "geri teper". Sonra q0\'a bir H daha.',
     n: 2, gates: ['H', 'X'], oracle: { kind: 'deutsch', col: 2 }, par: 4,
     lesson: "Faz geri tepmesi: kehanet cevabını girdiye faz olarak yazar, tek sorgu yeter.",
+    goal: "Kuantum bilgisayarın cevaba klasik bilgisayardan daha az soruyla ulaştığı ilk örneği çözmek.",
   },
   {
     id: 'grover',
@@ -144,6 +160,7 @@ const RAW = [
     hint: 'Önce eşit süperpozisyon. Kehanetten sonra "ortalama etrafında yansıtma" (difüzyon): H H, X X, CZ, X X, H H.',
     n: 2, gates: ['H', 'X', 'CZ'], oracle: { kind: 'grover', col: 1 }, par: 11,
     lesson: "İşaretle, sonra ortalama etrafında yansıt: doğru cevabın genliği büyür.",
+    goal: "Kuantum aramanın nasıl çalıştığını görmek.",
   },
   {
     id: 'ceyrek-sans',
@@ -152,6 +169,7 @@ const RAW = [
     hint: 'Ry(θ) sonrası 1 olasılığı sin²(θ/2). sin²(θ/2) = 1/4 için θ = ?',
     n: 1, gates: ['RY', 'H', 'X'], target: [r3, 0.5], par: 1,
     lesson: "Ry(θ) sonrası P(1) = sin²(θ/2): olasılığı istediğin değere ayarlayabilirsin.",
+    goal: "Ölçüm olasılığını istediğin değere ayarlamak.",
   },
   {
     id: 'altida-bir',
@@ -160,6 +178,7 @@ const RAW = [
     hint: 'Önce ekvatora çık, sonra Z ekseni etrafında dön.',
     n: 1, gates: ['H', 'RZ', 'S', 'T'], target: [1, e3], par: 2,
     lesson: "Rz göreli fazı döndürür; bütün genliklere ortak (global) faz fiziksel olarak görünmez.",
+    goal: "Fazı istediğin açıya döndürmek.",
   },
   {
     id: 'yarim-dolanik',
@@ -168,6 +187,7 @@ const RAW = [
     hint: 'Bell çiftindeki H yerine eğik bir Ry kullan.',
     n: 2, gates: ['RY', 'H', 'CNOT'], target: [r3, 0, 0, 0.5], par: 2,
     lesson: "Dolanıklık bir miktardır: 0 ile 1 bit arasında ayarlanabilir.",
+    goal: "Dolanıklığın var-yok değil, bir miktar olduğunu görmek.",
   },
   {
     id: 'bernstein-vazirani',
@@ -176,6 +196,7 @@ const RAW = [
     hint: 'Deutsch\'taki numaranın aynısı: yardımcı kübit |−⟩, girdiler süperpozisyonda, sonra girdilere tekrar H.',
     n: 3, gates: ['H', 'X'], oracle: { kind: 'bv', col: 2 }, par: 6,
     lesson: "Tek bir kuantum sorgusu, n bitlik gizli bir diziyi bütünüyle okuyabilir.",
+    goal: "Gizli bir sayıyı tek bir soruyla bütünüyle okumak.",
   },
   {
     id: 'super-yogun',
@@ -184,6 +205,7 @@ const RAW = [
     hint: 'Kutudan önce Bell çifti kur. Kutudan sonra Bell çiftini tersine çöz: aynı kapılar, ters sırada.',
     n: 2, gates: ['H', 'CNOT'], oracle: { kind: 'dense', col: 2 }, par: 4,
     lesson: "Önceden paylaşılmış dolanıklıkla tek bir kübit iki klasik bit taşır.",
+    goal: "Tek bir kübitle iki bitlik mesaj göndermek.",
   },
   {
     id: 'isinlanma',
@@ -193,6 +215,7 @@ const RAW = [
     n: 3, gates: ['H', 'CNOT', 'CZ'], oracle: { kind: 'teleport', col: 0 }, par: 6,
     allowedPairs: { CNOT: [[0, 1], [1, 2]] },
     lesson: "Dolanıklık ve iki klasik bit, bilinmeyen bir durumu taşır; yolda kopya oluşmaz.",
+    goal: "Bir kuantum durumunu bir kübitten ötekine taşımak.",
   },
   {
     id: 'fourier-saati',
@@ -201,6 +224,7 @@ const RAW = [
     hint: 'q0 yarım tur (180°), q1 çeyrek tur (90°), q2 sekizde bir tur (45°) dönmeli. Her biri için önce H.',
     n: 3, gates: ['H', 'X', 'S', 'T', 'CP'], target: Array.from({ length: 8 }, (_, y) => [Math.cos(Math.PI * y / 4), Math.sin(Math.PI * y / 4)]), par: 6,
     lesson: "QFT bir sayıyı fazlara yazar; bir taban durumunun QFT'si dolanık değildir.",
+    goal: "Kuantum Fourier dönüşümünü tanımak.",
   },
   {
     id: 'faz-kestirimi',
@@ -209,6 +233,7 @@ const RAW = [
     hint: 'Önce q2\'yi |1⟩ yap ve sayaç kübitlerini süperpozisyona sok. Kutudan sonra ters QFT: SWAP, H q1, CP(−π/2), H q0.',
     n: 3, gates: ['H', 'X', 'CP', 'SWAP'], oracle: { kind: 'qpe', col: 2 }, par: 7,
     lesson: "Kontrollü U^k kapıları fazı sayaç kübitlerine yazar, ters QFT onu bir sayıya çevirir.",
+    goal: "Shor algoritmasının kalbindeki yöntemi kullanmak.",
   },
   {
     id: 'bit-cevirme-kodu',
@@ -225,6 +250,7 @@ const RAW = [
     },
     par: 5,
     lesson: "Kuantum bilgi kopyalanamaz ama yayılabilir; çoğunluk oyu tek bir bit hatasını düzeltir.",
+    goal: "Kuantum bilgiyi hatalardan korumak.",
   },
 ];
 

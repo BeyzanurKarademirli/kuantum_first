@@ -8,6 +8,13 @@ Kurulum yok, hesap yok, reklam yok, takip yok. İlerlemen yalnızca kendi taray�
 
 **Oyna:** https://beyzanurkarademirli.github.io/kuantum_first/ · **Türkçe / English**
 
+**Neden var?** Kuantum bilgisayarlar bugün internet üzerinden kullanılabiliyor ve şifrelemeden ilaç
+araştırmasına kadar birçok alanı etkilemesi bekleniyor; ama nasıl çalıştıkları sezgiye ters. Dolanık bu
+sezgiyi oynayarak kazandırır. Sitedeki **Neden?** sekmesi altı kısmın her birinin ne kazandırdığını ve gerçek
+dünyadaki karşılığını (Nobel 2022 dolanıklık deneyleri, Grover araması, Shor ve RSA, Google'ın 2024 hata
+düzeltme sonucu) bir yolculuk haritasında gösterir. Her bölüm de başında "Öğreneceğin" hedefini, sonunda
+"Öğrendiğin kural"ı yazar.
+
 **Hiç bilmiyorsan:** Siteye ilk girişte kısa bir karşılama ekranı sitenin ne olduğunu anlatır. "Bana göster"
 dersen bir **rehber tur** başlar: hayalet bir imleç ekranda gezer, her kısmı ışıkla vurgulayıp ne işe
 yaradığını anlatır ve ilk bölümü senin gözünün önünde çözer. Turu istediğin an üstteki **Tur** düğmesiyle

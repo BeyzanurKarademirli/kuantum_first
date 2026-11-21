@@ -35,6 +35,7 @@ const savedTheme = store.get('dolanik.theme', null);
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
 
 const isEn = () => getLang() === 'en';
+const isTextMode = () => ui.mode === 'help' || ui.mode === 'why';
 const lvText = (lv, f) => {
   if (lv.id === 'meydan') {
     if (f === 'title') return t('challenge.title');
@@ -78,7 +79,9 @@ function setupInfoTips() {
   let current = null;
   const show = (btn) => {
     current = btn;
-    tip.innerHTML = t(`info.${btn.dataset.info}`);
+    tip.innerHTML = btn.dataset.info === 'chapter'
+      ? `<b>${chapterName(btn.dataset.ch)}</b>${t(`chgain.${btn.dataset.ch}`)}<br><br><i>${t('why.world')}:</i> ${t(`chworld.${btn.dataset.ch}`)}`
+      : t(`info.${btn.dataset.info}`);
     tip.classList.add('show');
     btn.setAttribute('aria-expanded', 'true');
     const r = btn.getBoundingClientRect();
@@ -454,7 +457,7 @@ function renderSide() {
         const inCh = LEVELS.filter((l) => l.chapter === lv.chapter);
         const got = inCh.reduce((a, l) => a + (ui.progress[l.id] || 0), 0);
         const h = document.createElement('h4');
-        h.innerHTML = '<span></span><span class="diff"></span><span class="chbar"><i></i></span>';
+        h.innerHTML = `<span></span><span class="diff"></span><span class="chbar"><i></i></span><button class="info" type="button" data-info="chapter" data-ch="${lv.chapter}"></button>`;
         h.firstChild.textContent = chapterName(lv.chapter);
         const d = DIFFICULTY[lv.chapter];
         h.querySelector('.diff').textContent = t(`diff.${d}`);
@@ -528,6 +531,7 @@ function renderStory() {
   const h = document.createElement('h2');
   const p = document.createElement('p');
   if (ui.mode === 'help') { renderHelp(st); return; }
+  if (ui.mode === 'why') { renderWhy(st); return; }
   if (ui.mode === 'sandbox') {
     h.textContent = t('lab.title');
     p.textContent = t('lab.story');
@@ -542,6 +546,17 @@ function renderStory() {
   st.dataset.num = ui.custom ? '◎' : ui.levelIdx + 1;
   h.textContent = lvText(lv, 'title');
   setRich(p, lvText(lv, 'story'));
+  const goalText = lvText(lv, 'goal');
+  let goal = null;
+  if (goalText) {
+    goal = document.createElement('p');
+    goal.className = 'objective';
+    const k = document.createElement('b');
+    k.textContent = t('story.goal');
+    const v = document.createElement('span');
+    setRich(v, goalText);
+    goal.append(k, v);
+  }
   const meta = document.createElement('div');
   meta.className = 'meta';
   const chip = (text, cls = '') => { const c = document.createElement('span'); c.className = `tagchip ${cls}`; c.textContent = text; meta.appendChild(c); };
@@ -557,7 +572,60 @@ function renderStory() {
   const hp = document.createElement('p');
   setRich(hp, lvText(lv, 'hint'));
   det.append(sum, hp);
-  st.append(chap, h, p, meta, det);
+  st.append(...[chap, h, goal, p, meta, det].filter(Boolean));
+}
+
+// "Neden?" sayfası: amaç, kimin için, sonunda kazanılanlar ve kısımların yolculuk haritası
+function renderWhy(st) {
+  st.classList.add('help', 'why');
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const h = el('h2', '', ''); h.textContent = t('why.title');
+  const intro = el('p', 'why-intro', t('why.intro'));
+  const grid = el('div', 'why-grid');
+  const who = el('section', 'why-box');
+  who.append(el('h3', '', t('why.who.title')), el('p', '', t('why.who')));
+  const end = el('section', 'why-box');
+  const ul = el('ul', 'why-list');
+  for (let k = 1; k <= 5; k++) ul.append(el('li', '', t(`why.end${k}`)));
+  end.append(el('h3', '', t('why.end.title')), ul);
+  grid.append(who, end);
+  const mapH = el('h3', '', t('why.map.title'));
+  const mapSub = el('p', 'fine', t('why.map.sub'));
+  const ol = el('ol', 'journey');
+  const chapters = [...new Set(LEVELS.map((l) => l.chapter))];
+  chapters.forEach((c, idx) => {
+    const lvls = LEVELS.filter((l) => l.chapter === c);
+    const got = lvls.reduce((a, l) => a + (ui.progress[l.id] || 0), 0);
+    const max = lvls.length * 3;
+    const d = DIFFICULTY[c];
+    const li = el('li', 'stage');
+    li.style.setProperty('--i', idx);
+    li.innerHTML = `
+      <div class="stage-head">
+        <span class="stage-num">${idx + 1}</span>
+        <div class="stage-title"><b></b><span class="diff" data-d="${d}"></span><span class="stage-count"></span></div>
+        <div class="stage-prog" title="${got}/${max} ✦"><span><i style="width:${(got / max) * 100}%"></i></span><em>${got}/${max} ✦</em></div>
+      </div>
+      <div class="stage-body">
+        <div><span class="stage-k">${t('why.gain')}</span><p class="g"></p></div>
+        <div><span class="stage-k">${t('why.world')}</span><p class="w"></p></div>
+      </div>
+      <button class="btn stage-go" type="button"></button>`;
+    li.querySelector('.stage-title b').textContent = chapterName(c);
+    li.querySelector('.diff').textContent = t(`diff.${d}`);
+    li.querySelector('.stage-count').textContent = t('why.levels', { k: lvls.length });
+    li.querySelector('.g').textContent = t(`chgain.${c}`);
+    li.querySelector('.w').textContent = t(`chworld.${c}`);
+    const go = li.querySelector('.stage-go');
+    go.innerHTML = `${t('why.start')} <span aria-hidden="true">→</span>`;
+    go.addEventListener('click', () => {
+      setMode('level');
+      loadLevel(LEVELS.indexOf(lvls[0]));
+      scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    });
+    ol.append(li);
+  });
+  st.replaceChildren(h, intro, grid, mapH, mapSub, ol, el('p', 'fine', t('why.honest')));
 }
 
 function renderHelp(st) {
@@ -833,9 +901,9 @@ function setMode(mode) {
   ui.step = COLS;
   $('step').value = COLS;
   // yalnızca mod sınıfını değiştir; 'touring' gibi diğer sınıflar korunur
-  document.body.classList.remove('mode-level', 'mode-sandbox', 'mode-help');
+  document.body.classList.remove('mode-level', 'mode-sandbox', 'mode-help', 'mode-why');
   document.body.classList.add(`mode-${mode}`);
-  $('story').classList.remove('help');
+  $('story').classList.remove('help', 'why');
   for (const b of document.querySelectorAll('.modes button')) {
     b.classList.toggle('on', b.dataset.mode === mode);
     b.setAttribute('aria-selected', b.dataset.mode === mode);
@@ -885,7 +953,7 @@ function startChallenge() {
 function renderAll() {
   renderSide();
   renderStory();
-  if (ui.mode === 'help') return;
+  if (isTextMode()) return;
   renderPalette();
   setDesc();
   $('blochs').replaceChildren();
@@ -972,7 +1040,7 @@ document.addEventListener('keydown', (e) => {
     if (!$('win').hidden) { $('win').hidden = true; return; }
     ui.pending = null; setDesc(); renderCircuit(); return;
   }
-  if (e.ctrlKey || e.metaKey || e.altKey || ui.mode === 'help') return;
+  if (e.ctrlKey || e.metaKey || e.altKey || isTextMode()) return;
   const k = e.key.toUpperCase();
   const map = { C: 'CNOT', W: 'SWAP' };
   const g = GATES[k] ? k : map[k];
@@ -980,7 +1048,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 let rz;
-window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { moveThumb(); if (ui.mode !== 'help') update({ silent: true }); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { moveThumb(); if (!isTextMode()) update({ silent: true }); }, 120); });
 
 $('langBtn').addEventListener('click', () => {
   setLang(isEn() ? 'tr' : 'en');
